@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator
-from typing import List, Union
+from typing import List, Union, Optional
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -20,8 +20,8 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
-    # API Configuration
-    API_V1_PREFIX: str = "/api/v1"
+    # Database
+    DATABASE_URL: Optional[str] = None
 
     # CORS Configuration
     CORS_ORIGINS: Union[List[str], str] = [
@@ -32,9 +32,7 @@ class Settings(BaseSettings):
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, v):
-        """Parse CORS_ORIGINS from string or list"""
         if isinstance(v, str):
-            # Handle comma-separated string from .env
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
     

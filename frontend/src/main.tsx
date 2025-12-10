@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { ClerkProvider } from '@clerk/clerk-react'
 import { env } from './config/env'
 import './index.css'
-import App from './App.jsx'
+import App from './App'
 
 // check if clerk key is set
 if (!env.clerkPublishableKey) {

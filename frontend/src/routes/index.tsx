@@ -1,117 +1,99 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { SignedIn, SignedOut } from '@clerk/clerk-react'
-import { RoleSetter } from '../components/RoleSetter'
-import HomePage from '../pages/Landing/landing'
-import LoginPage from '../pages/Auth/login'
-import SSOCallback from '../pages/Auth/sso-callback'
-import DashboardPage from '../pages/Dashboard/dashboard'
-import EventsPage from '../pages/Events/events'
-import CreateEventPage from '../pages/Events/create/create-event'
-import EventDetailsPage from '../pages/Events/event-details/details'
-import SignupPage from '../pages/Auth/signup'
-import FeedbackPage from '../pages/Feedback/feedback'
-import FeedbackSuccessPage from '../pages/Feedback/success/feedback-success'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { SignedIn, SignedOut, useUser } from '@clerk/clerk-react';
+import { AuthPage } from '../pages/Event/AuthPage';
+import { EventFeed } from '../pages/Event/EventFeed';
+import { OrganizerDashboard } from '../pages/Event/OrganizerDashboard';
+import { VolunteerDashboard } from '../pages/Event/VolunteerDashboard';
+import { Navbar } from '../components/Navbar'; // Added Import
+import { useUserRole } from '../hooks/useUserRole';
+import { User, UserRole } from '../types';
+
+// Wrapper to inject user data for Dashboard
+const DashboardWithUser = () => {
+    const { user, isLoaded } = useUser();
+    const { role } = useUserRole();
+
+    if (!isLoaded || !user) return <div className="p-10 text-center">Loading profile...</div>;
+
+    // Construct the User object expected by your components
+    const appUser: User = {
+        id: user.id,
+        name: user.fullName || 'User',
+        email: user.primaryEmailAddress?.emailAddress || '',
+        role: (role as UserRole) || UserRole.VOLUNTEER,
+        avatar: user.imageUrl,
+        bookmarks: (user.unsafeMetadata?.bookmarks as string[]) || [] 
+    };
+
+    return role === UserRole.ORGANIZER 
+        ? <OrganizerDashboard user={appUser} /> 
+        : <VolunteerDashboard user={appUser} />;
+}
+
+// Wrapper to inject user data for Feed
+const FeedWithUser = () => {
+    const { user, isLoaded } = useUser();
+    const { role } = useUserRole();
+
+    if (!isLoaded || !user) return <div className="p-10 text-center">Loading feed...</div>;
+
+    const appUser: User = {
+        id: user.id,
+        name: user.fullName || 'User',
+        email: user.primaryEmailAddress?.emailAddress || '',
+        role: (role as UserRole) || UserRole.VOLUNTEER,
+        avatar: user.imageUrl,
+        bookmarks: (user.unsafeMetadata?.bookmarks as string[]) || []
+    };
+
+    return <EventFeed user={appUser} onNavigate={() => {}} />;
+}
 
 export default function AppRoutes() {
     return (
         <BrowserRouter>
-            <Routes>
+            {/* Navbar added here so it renders on all pages */}
+            <Navbar />
+            
+            <div className="min-h-screen bg-gray-50">
+                <Routes>
+                    {/* Landing Redirect */}
+                    <Route path="/" element={<Navigate to="/feed" replace />} />
 
-                {/* root */}
-                <Route path="/"
-                    element={<HomePage />}
-                />
+                    {/* Campus Feed */}
+                    <Route path="/feed"
+                        element={
+                            <>
+                                <SignedIn>
+                                    <FeedWithUser />
+                                </SignedIn>
+                                <SignedOut>
+                                    <Navigate to="/login" replace />
+                                </SignedOut>
+                            </>
+                        }
+                    />
 
-                {/* events */}
-                <Route path="/events"
-                    element={<EventsPage />}
-                />
+                    {/* Authentication */}
+                    <Route path="/login" element={<AuthPage />} />
+                    <Route path="/signup" element={<AuthPage />} />
 
-                {/* auth */}
-                <Route path="/login"
-                    element={<LoginPage />}
-                />
-                <Route path="/signup"
-                    element={<SignupPage />}
-                />
-                <Route path="/sso-callback"
-                    element={<SSOCallback />}
-                />
-
-                {/* protected routes */}
-                <Route
-                    path="/dashboard"
-                    element={
-                        <>
-                            <SignedIn>
-                                <RoleSetter>
-                                    <DashboardPage />
-                                </RoleSetter>
-                            </SignedIn>
-                            <SignedOut>
-                                <Navigate to="/" replace />
-                            </SignedOut>
-                        </>
-                    }
-                />
-
-                <Route
-                    path="/events/create"
-                    element={
-                        <>
-                            <SignedIn>
-                                <CreateEventPage />
-                            </SignedIn>
-                            <SignedOut>
-                                <Navigate to="/login" replace />
-                            </SignedOut>
-                        </>
-                    }
-                />
-
-                <Route
-                    path="/events/:eventId"
-                    element={
-                        <>
-                            <SignedIn>
-                                <EventDetailsPage />
-                            </SignedIn>
-                            <SignedOut>
-                                <Navigate to="/login" replace />
-                            </SignedOut>
-                        </>
-                    }
-                />
-
-                <Route
-                    path="/feedback"
-                    element={
-                        <>
-                            <SignedIn>
-                                <FeedbackPage />
-                            </SignedIn>
-                            <SignedOut>
-                                <Navigate to="/" replace />
-                            </SignedOut>
-                        </>
-                    }
-                />
-
-                <Route
-                    path="/feedback/success"
-                    element={
-                        <>
-                            <SignedIn>
-                                <FeedbackSuccessPage />
-                            </SignedIn>
-                            <SignedOut>
-                                <Navigate to="/" replace />
-                            </SignedOut>
-                        </>
-                    }
-                />
-
-            </Routes>
+                    {/* Dashboard */}
+                    <Route
+                        path="/dashboard"
+                        element={
+                            <>
+                                <SignedIn>
+                                    <DashboardWithUser />
+                                </SignedIn>
+                                <SignedOut>
+                                    <Navigate to="/login" replace />
+                                </SignedOut>
+                            </>
+                        }
+                    />
+                </Routes>
+            </div>
         </BrowserRouter>
     )
 }
