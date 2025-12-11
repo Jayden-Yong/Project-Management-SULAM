@@ -33,8 +33,11 @@ class Event(SQLModel, table=True):
     description: str
     organizerId: str
     organizerName: str
-    # We remove the 3MB validator because we now store Supabase URLs (short strings).
-    imageUrl: Optional[str] = Field(default=None, sa_column_kwargs={"type_": "TEXT"}) 
+    
+    # FIXED: Removed sa_column_kwargs={"type_": "TEXT"}
+    # Since we are storing URLs now, the default String type is perfect.
+    imageUrl: Optional[str] = Field(default=None) 
+    
     status: str = Field(default=EventStatus.UPCOMING)
 
 class Registration(SQLModel, table=True):
