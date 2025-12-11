@@ -142,7 +142,7 @@ async def join_event(
         status=RegistrationStatus.PENDING 
     )
     
-    # FIXED: We do NOT increment currentVolunteers here. 
+    # We do NOT increment currentVolunteers here. 
     # Only confirmed users count towards the quota.
     
     session.add(new_reg)
@@ -164,7 +164,7 @@ async def get_event_registrations(
 @app.patch("/registrations/{registration_id}")
 async def update_registration_status(
     registration_id: str, 
-    payload: UpdateRegistrationStatusRequest, # Updated for validation
+    payload: UpdateRegistrationStatusRequest,
     session: Session = Depends(get_session),
     current_user: dict = Depends(get_current_user)
 ):
@@ -183,8 +183,12 @@ async def update_registration_status(
     old_status = reg.status
     new_status = payload.status
     
-    # FIXED: Logic to update count only when CONFIRMED
+    # FIXED: Logic to update count only when CONFIRMED and enforce MAX LIMIT
     if new_status == RegistrationStatus.CONFIRMED and old_status != RegistrationStatus.CONFIRMED:
+        # Check if event is full before confirming
+        if event.currentVolunteers >= event.maxVolunteers:
+            raise HTTPException(status_code=400, detail="Event quota reached. Cannot confirm more volunteers.")
+        
         # User is being confirmed -> Increment count
         event.currentVolunteers += 1
         session.add(event)
@@ -223,7 +227,6 @@ async def get_user_registrations(
         reg_dict = r.model_dump()
         if event:
             reg_dict["eventTitle"] = event.title
-            # Note: event.date is now a 'date' object, Pydantic handles serialization to JSON
             reg_dict["eventDate"] = event.date 
             reg_dict["eventStatus"] = event.status
         reg_dict["hasFeedback"] = has_feedback
