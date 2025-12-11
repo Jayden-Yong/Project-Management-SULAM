@@ -2,7 +2,7 @@ import datetime
 from typing import List, Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select, SQLModel
 
@@ -62,6 +62,8 @@ async def health_check():
 async def get_events(
     organizerId: Optional[str] = None, 
     status: Optional[str] = None, 
+    skip: int = 0,    # FIX 3: Added pagination skip
+    limit: int = 100, # FIX 3: Added pagination limit (default 100 to prevent crash)
     session: Session = Depends(get_session)
 ):
     """Fetch all events, optionally filtered by organizer or status."""
@@ -70,6 +72,10 @@ async def get_events(
         query = query.where(Event.organizerId == organizerId)
     if status:
         query = query.where(Event.status == status)
+    
+    # FIX 3: Apply pagination
+    query = query.offset(skip).limit(limit)
+    
     return session.exec(query).all()
 
 @app.post("/events", response_model=Event)
@@ -79,13 +85,11 @@ async def create_event(
     current_user: dict = Depends(get_current_user)
 ):
     """Create a new event. Requires Auth & Organizer Role."""
-    # 1. Check if user is creating event for themselves
-    if event.organizerId != current_user.get("sub"):
-         raise HTTPException(status_code=403, detail="User ID mismatch")
     
-    # 2. SECURITY FIX: Enforce Organizer Role
-    # If you haven't set up Clerk Session Tokens yet, this might fail.
-    # Comment out the next 2 lines if you need to test without role checks first.
+    # FIX 4: Security - Do not trust the body. Force ID from token.
+    event.organizerId = current_user.get("sub")
+    
+    # 2. SECURITY: Enforce Organizer Role
     if not is_organizer(current_user):
         raise HTTPException(status_code=403, detail="Only organizers can create events")
 
@@ -109,7 +113,6 @@ async def update_event_status(
     if event.organizerId != current_user.get("sub"):
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    # SECURITY FIX: Enforce Organizer Role
     if not is_organizer(current_user):
         raise HTTPException(status_code=403, detail="Only organizers can update events")
 
@@ -127,6 +130,7 @@ async def join_event(
     current_user: dict = Depends(get_current_user)
 ):
     """Register a user for an event."""
+    # FIX 4 (Partial): Ensure users can only join as themselves
     if payload.userId != current_user.get("sub"):
         raise HTTPException(status_code=403, detail="Cannot join for another user")
 
@@ -166,7 +170,6 @@ async def get_event_registrations(
     current_user: dict = Depends(get_current_user)
 ):
     """Get all participants for a specific event."""
-    # Optional: You could verify current_user is the organizer of event_id here
     return session.exec(select(Registration).where(Registration.eventId == event_id)).all()
 
 @app.patch("/registrations/{registration_id}")
@@ -181,7 +184,13 @@ async def update_registration_status(
     if not reg:
         raise HTTPException(status_code=404, detail="Registration not found")
     
-    event = session.get(Event, reg.eventId)
+    # FIX 2: Race Condition Fix. 
+    # We fetch the event using 'with_for_update()' to lock the row.
+    # This prevents two requests from reading the same 'currentVolunteers' count simultaneously.
+    event = session.exec(
+        select(Event).where(Event.id == reg.eventId).with_for_update()
+    ).one_or_none()
+
     if not event:
          raise HTTPException(status_code=404, detail="Associated event not found")
          
