@@ -1,15 +1,30 @@
 import uuid
 from typing import Optional
+from datetime import date  # <--- NEW IMPORT
+from enum import Enum      # <--- NEW IMPORT
 from sqlmodel import SQLModel, Field
 
 # ==========================================
-# Database Tables (Stored in DB)
+# Enums (For Validation - Part C)
+# ==========================================
+
+class EventStatus(str, Enum):
+    UPCOMING = "upcoming"
+    COMPLETED = "completed"
+
+class RegistrationStatus(str, Enum):
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    REJECTED = "rejected"
+
+# ==========================================
+# Database Tables
 # ==========================================
 
 class Event(SQLModel, table=True):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     title: str
-    date: str
+    date: date  # <--- FIXED (Part B): Used specific date type
     location: str
     category: str
     maxVolunteers: int
@@ -18,13 +33,13 @@ class Event(SQLModel, table=True):
     organizerId: str
     organizerName: str
     imageUrl: Optional[str] = None
-    status: str = Field(default="upcoming") # 'upcoming', 'completed'
+    status: str = Field(default=EventStatus.UPCOMING)
 
 class Registration(SQLModel, table=True):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     eventId: str = Field(index=True)
     userId: str = Field(index=True)
-    status: str = Field(default="pending") # 'pending', 'confirmed', 'rejected'
+    status: str = Field(default=RegistrationStatus.PENDING)
     joinedAt: str
     userName: Optional[str] = "Student Volunteer"
     userAvatar: Optional[str] = None
@@ -42,7 +57,7 @@ class Bookmark(SQLModel, table=True):
     eventId: str = Field(index=True)
 
 # ==========================================
-# Request Models (Body payloads)
+# Request Models
 # ==========================================
 
 class BookmarkRequest(SQLModel):
@@ -53,6 +68,9 @@ class JoinRequest(SQLModel):
     userName: Optional[str] = "Student"
     userAvatar: Optional[str] = ""
 
-class UpdateStatusRequest(SQLModel):
-    """Used for patching status on Events or Registrations"""
-    status: str
+# NEW: Specific models for validation (Part C)
+class UpdateEventStatusRequest(SQLModel):
+    status: EventStatus
+
+class UpdateRegistrationStatusRequest(SQLModel):
+    status: RegistrationStatus
