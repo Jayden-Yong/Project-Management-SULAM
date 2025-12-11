@@ -33,16 +33,9 @@ class Event(SQLModel, table=True):
     description: str
     organizerId: str
     organizerName: str
-    imageUrl: Optional[str] = Field(default=None, sa_column_kwargs={"type_": "TEXT"}) # Explicitly use TEXT for large strings
+    # We remove the 3MB validator because we now store Supabase URLs (short strings).
+    imageUrl: Optional[str] = Field(default=None, sa_column_kwargs={"type_": "TEXT"}) 
     status: str = Field(default=EventStatus.UPCOMING)
-
-    # --- PERFORMANCE FIX: Validate Image Size ---
-    @field_validator("imageUrl")
-    @classmethod
-    def validate_image_size(cls, v: Optional[str]) -> Optional[str]:
-        if v and len(v) > 3_000_000:  # Limit to ~3MB (approx 2MB image base64 encoded)
-            raise ValueError("Image size is too large. Please use a smaller image (under 2MB).")
-        return v
 
 class Registration(SQLModel, table=True):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)

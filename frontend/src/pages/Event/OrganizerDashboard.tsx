@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { User, Event, Registration } from '../../types';
+import { supabase } from '../../services/supabaseClient'; // NEW IMPORT
 import { 
   createEvent, getOrganizerEvents, updateEventStatus, getEventAverageRating, 
   getFeedbacks, getEventRegistrations, updateRegistrationStatus 
@@ -18,6 +19,9 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
     title: '', date: '', location: '', category: 'Campus Life',
     maxVolunteers: 20, description: '', tasks: '', imageUrl: ''
   });
+  
+  // NEW: Upload state
+  const [uploading, setUploading] = useState(false);
 
   const fetchEvents = async () => {
     try {
@@ -45,42 +49,47 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
     setCurrentParticipants(participants);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          
-          // FIX: Limit image size to prevent DB bloat
-          const MAX_WIDTH = 300; 
-          
-          if (width > MAX_WIDTH) { 
-            height *= MAX_WIDTH / width; 
-            width = MAX_WIDTH; 
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          
-          // Use lower quality (0.5) to keep string size small
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
-          setFormData({ ...formData, imageUrl: dataUrl });
-        };
-        img.src = event.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+  // UPDATED: Handle Image Upload via Supabase
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // 1. Generate unique file path
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // 2. Upload to Supabase 'event-banners' bucket
+      const { error: uploadError } = await supabase.storage
+        .from('event-banners')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // 3. Get Public URL
+      const { data } = supabase.storage
+        .from('event-banners')
+        .getPublicUrl(filePath);
+
+      // 4. Save URL to state
+      setFormData({ ...formData, imageUrl: data.publicUrl });
+      
+    } catch (error: any) {
+      console.error(error);
+      alert('Error uploading image: ' + error.message);
+    } finally {
+      setUploading(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (uploading) return; // Prevent submit while uploading
+    
     await createEvent({ ...formData, organizerId: user.id, organizerName: user.name });
     setShowModal(false);
     fetchEvents();
@@ -89,7 +98,6 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
 
   const handleConclude = async (eventId: string) => {
     if (confirm('Conclude event?')) {
-      // FIX 2: Added error handling to catch permission issues or failures
       try {
         await updateEventStatus(eventId, 'completed');
         fetchEvents();
@@ -101,14 +109,12 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
   };
 
   const handleParticipantAction = async (registrationId: string, action: 'confirmed' | 'rejected', eventId: string) => {
-      // FIX 3: Added 'await' to ensure lists refresh before UI updates, solving the "sometimes empty" bug
       try {
         await updateRegistrationStatus(registrationId, action);
         await fetchParticipants(eventId);
         await fetchEvents();
       } catch (error: any) {
         console.error("Failed to update participant status", error);
-        // Alert the user if overbooking or other logic error occurs
         alert(error.response?.data?.detail || "Action failed");
       }
   };
@@ -153,8 +159,31 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
           <div className="bg-white w-full h-[90vh] sm:h-auto sm:max-h-[90vh] sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col relative z-10">
             <div className="flex justify-between items-center p-5 border-b border-slate-100"><h3 className="font-bold text-lg text-slate-900">Plan Campus Activity</h3><button onClick={() => setShowModal(false)} className="p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">✕</button></div>
-            <div className="flex-1 overflow-y-auto p-6"><form onSubmit={handleSubmit} className="space-y-4"><div><label className="block text-xs font-bold text-slate-700 mb-1">Event Banner</label><div className="flex items-center gap-4">{formData.imageUrl && (<img src={formData.imageUrl} alt="Preview" className="h-16 w-24 object-cover rounded-lg border border-slate-200" />)}<label className="cursor-pointer bg-white border border-slate-200 text-slate-600 px-4 py-3 rounded-xl text-sm font-medium hover:bg-slate-50 flex-1 text-center flex flex-col items-center justify-center"><span className="text-xs">{formData.imageUrl ? 'Change Image' : 'Upload Image'}</span><input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} /></label></div></div><div><label className="block text-xs font-bold text-slate-700 mb-1">Event Title</label><input type="text" required placeholder="e.g. Gotong Royong KK12" className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} /></div><div className="grid grid-cols-2 gap-4"><div><label className="block text-xs font-bold text-slate-700 mb-1">Date</label><input type="date" required className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} /></div><div><label className="block text-xs font-bold text-slate-700 mb-1">Category</label><select className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}><option>Campus Life</option><option>Education</option><option>Environment</option><option>Welfare</option></select></div></div><div><label className="block text-xs font-bold text-slate-700 mb-1">Location / Venue</label><input type="text" required placeholder="e.g., DTC, Tasik Varsiti" className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} /></div><div><label className="block text-xs font-bold text-slate-700 mb-1">Max Volunteers</label><input type="number" required className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.maxVolunteers} onChange={e => setFormData({...formData, maxVolunteers: parseInt(e.target.value)})} /></div><div><label className="block text-xs font-bold text-slate-700 mb-1">Description</label><textarea required placeholder="What will students be doing?" rows={3} className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea></div><div><label className="block text-xs font-bold text-slate-700 mb-1">Volunteer Roles & Tasks</label><textarea required placeholder="• Role A (Qty)&#10;• Role B (Qty)" rows={3} className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm font-mono" value={formData.tasks} onChange={e => setFormData({...formData, tasks: e.target.value})}></textarea><p className="text-[10px] text-slate-400 mt-1">Be specific so students know what to expect.</p></div></form></div>
-            <div className="p-5 border-t border-slate-100 bg-white"><button onClick={handleSubmit} className="w-full py-3.5 bg-primary-600 text-white font-bold text-sm rounded-xl hover:bg-primary-700 shadow-lg shadow-primary-200 transition-transform active:scale-95">Publish Event</button></div>
+            <div className="flex-1 overflow-y-auto p-6">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Event Banner</label>
+                        <div className="flex items-center gap-4">
+                            {formData.imageUrl && (<img src={formData.imageUrl} alt="Preview" className="h-16 w-24 object-cover rounded-lg border border-slate-200" />)}
+                            <label className={`cursor-pointer bg-white border border-slate-200 text-slate-600 px-4 py-3 rounded-xl text-sm font-medium hover:bg-slate-50 flex-1 text-center flex flex-col items-center justify-center ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                <span className="text-xs">{uploading ? 'Uploading...' : (formData.imageUrl ? 'Change Image' : 'Upload Image')}</span>
+                                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+                            </label>
+                        </div>
+                    </div>
+                    <div><label className="block text-xs font-bold text-slate-700 mb-1">Event Title</label><input type="text" required placeholder="e.g. Gotong Royong KK12" className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} /></div>
+                    <div className="grid grid-cols-2 gap-4"><div><label className="block text-xs font-bold text-slate-700 mb-1">Date</label><input type="date" required className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} /></div><div><label className="block text-xs font-bold text-slate-700 mb-1">Category</label><select className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}><option>Campus Life</option><option>Education</option><option>Environment</option><option>Welfare</option></select></div></div>
+                    <div><label className="block text-xs font-bold text-slate-700 mb-1">Location / Venue</label><input type="text" required placeholder="e.g., DTC, Tasik Varsiti" className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} /></div>
+                    <div><label className="block text-xs font-bold text-slate-700 mb-1">Max Volunteers</label><input type="number" required className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.maxVolunteers} onChange={e => setFormData({...formData, maxVolunteers: parseInt(e.target.value)})} /></div>
+                    <div><label className="block text-xs font-bold text-slate-700 mb-1">Description</label><textarea required placeholder="What will students be doing?" rows={3} className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea></div>
+                    <div><label className="block text-xs font-bold text-slate-700 mb-1">Volunteer Roles & Tasks</label><textarea required placeholder="• Role A (Qty)&#10;• Role B (Qty)" rows={3} className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm font-mono" value={formData.tasks} onChange={e => setFormData({...formData, tasks: e.target.value})}></textarea><p className="text-[10px] text-slate-400 mt-1">Be specific so students know what to expect.</p></div>
+                </form>
+            </div>
+            <div className="p-5 border-t border-slate-100 bg-white">
+                <button onClick={handleSubmit} disabled={uploading} className="w-full py-3.5 bg-primary-600 text-white font-bold text-sm rounded-xl hover:bg-primary-700 shadow-lg shadow-primary-200 transition-transform active:scale-95 disabled:opacity-50">
+                    {uploading ? 'Uploading Image...' : 'Publish Event'}
+                </button>
+            </div>
           </div>
         </div>
       )}
