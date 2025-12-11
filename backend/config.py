@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     DATABASE_URL: Optional[str] = None
     CLERK_ISSUER: Optional[str] = None
 
-    @field_validator("CORS_ORIGINS",qh mode="before")
+    @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
