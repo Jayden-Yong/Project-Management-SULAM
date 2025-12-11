@@ -25,14 +25,14 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        const data = await getEvents();
-        // Sort by date (ascending) -> Soonest events first
-        const upcoming = data
-            .filter(e => e.status === 'upcoming' || !e.status)
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        // NEW: Pass 'upcoming' directly to API to avoid fetching large history
+        const data = await getEvents('upcoming');
+        
+        // We still sort client-side for better UX (soonest first)
+        const sorted = data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             
-        setEvents(upcoming);
-        setFilteredEvents(upcoming); // Initialize filtered list
+        setEvents(sorted);
+        setFilteredEvents(sorted); // Initialize filtered list
       } catch (e) {
         console.error("Failed to load events", e);
       } finally {
@@ -179,7 +179,14 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
 
             return (
               <div key={event.id} className="group bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col">
-                {/* ... (Image Rendering kept same) ... */}
+                {event.imageUrl && (
+                  <div className="h-48 w-full overflow-hidden relative">
+                     <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                     <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm border border-white/50">
+                        {event.category}
+                     </div>
+                  </div>
+                )}
                 
                 <div className="p-5 flex flex-col flex-1">
                   <div className="flex gap-4 mb-3">
