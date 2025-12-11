@@ -1,18 +1,14 @@
 from sqlmodel import create_engine, Session
 from config import settings
 
-# Validate presence of DB URL
 if not settings.DATABASE_URL:
-    raise ValueError("DATABASE_URL is not set in .env file")
+    raise ValueError("DATABASE_URL is not set in environment")
 
-# 1. Fix Protocol: SQLAlchemy needs 'postgresql://', but some providers (Supabase) give 'postgres://'
-connection_string = settings.DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-# 2. Engine Creation: Includes settings to keep connections alive (essential for cloud deployments)
+# Engine Creation
 engine = create_engine(
-    connection_string,
-    pool_pre_ping=True,  # Checks connection health before use
-    echo=settings.DEBUG, # Logs SQL queries if DEBUG is True
+    settings.DATABASE_URL,
+    pool_pre_ping=True, 
+    echo=settings.DEBUG,
     connect_args={
         "keepalives": 1,
         "keepalives_idle": 30,
