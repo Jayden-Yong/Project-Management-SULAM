@@ -5,8 +5,8 @@ import {
   getFeedbacks, getEventRegistrations, updateRegistrationStatus 
 } from '../../services/api';
 
-interfaceHN_Props { user: User; }
-interface EventWithStats extendsHN_Event { avgRating?: number; feedbackCount?: number; }
+interface Props { user: User; }
+interface EventWithStats extends Event { avgRating?: number; feedbackCount?: number; }
 
 export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
   const [events, setEvents] = useState<EventWithStats[]>([]);
