@@ -1,35 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/clerk-react'
-import { setAuthToken } from './services/api'
+import { setupAxiosInterceptors } from './services/api' // Updated import
 import AppRoutes from './routes/'
 
 function App() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken, isLoaded } = useAuth();
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    const setupToken = async () => {
-      // 1. Wait for Clerk to finish loading
-      if (isLoaded) {
-        if (isSignedIn) {
-          try {
-            // 2. Fetch the secure token
-            const token = await getToken();
-            // 3. Set it in the API headers
-            setAuthToken(token);
-          } catch (error) {
-            console.error("Error fetching token:", error);
-            setAuthToken(null);
-          }
-        } else {
-          setAuthToken(null);
-        }
-        // 4. Signal that the app is ready to render
-        setAuthReady(true);
-      }
-    };
-    setupToken();
-  }, [isLoaded, isSignedIn, getToken]);
+    if (isLoaded) {
+      // Pass the getToken function to the API service
+      // This allows axios to call it dynamically before every request
+      setupAxiosInterceptors(getToken);
+      setAuthReady(true);
+    }
+  }, [isLoaded, getToken]);
 
   // Show a loading spinner while we wait for auth to initialize
   if (!isLoaded || !authReady) {
