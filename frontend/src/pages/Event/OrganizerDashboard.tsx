@@ -56,12 +56,12 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
           let width = img.width;
           let height = img.height;
           
-          // FIX 1: Corrected syntax error (added space after const)
-          const HZ_WIDTH = 400; 
+          // FIX: Limit image size to prevent DB bloat
+          const MAX_WIDTH = 300; 
           
-          if (width > HZ_WIDTH) { 
-            height *= HZ_WIDTH / width; 
-            width = HZ_WIDTH; 
+          if (width > MAX_WIDTH) { 
+            height *= MAX_WIDTH / width; 
+            width = MAX_WIDTH; 
           }
           
           canvas.width = width;
@@ -69,7 +69,8 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
           
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          // Use lower quality (0.5) to keep string size small
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
           setFormData({ ...formData, imageUrl: dataUrl });
         };
         img.src = event.target?.result as string;
@@ -105,8 +106,10 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
         await updateRegistrationStatus(registrationId, action);
         await fetchParticipants(eventId);
         await fetchEvents();
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to update participant status", error);
+        // Alert the user if overbooking or other logic error occurs
+        alert(error.response?.data?.detail || "Action failed");
       }
   };
 
