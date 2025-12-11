@@ -59,12 +59,15 @@ async def health_check():
 @app.get("/events", response_model=List[Event])
 async def get_events(
     organizerId: Optional[str] = None, 
+    status: Optional[str] = None,  # <--- NEW: Filter by status
     session: Session = Depends(get_session)
 ):
-    """Fetch all events, optionally filtered by organizer."""
+    """Fetch all events, optionally filtered by organizer or status."""
     query = select(Event)
     if organizerId:
         query = query.where(Event.organizerId == organizerId)
+    if status:
+        query = query.where(Event.status == status) # <--- NEW: Apply filter
     return session.exec(query).all()
 
 @app.post("/events", response_model=Event)
@@ -172,6 +175,17 @@ async def update_registration_status(
     if not reg:
         raise HTTPException(status_code=404, detail="Registration not found")
     
+    # --- SECURITY FIX START ---
+    # Fetch the event to check ownership
+    event = session.get(Event, reg.eventId)
+    if not event:
+         raise HTTPException(status_code=404, detail="Associated event not found")
+         
+    # Check if the requester is the organizer
+    if event.organizerId != current_user.get("sub"):
+        raise HTTPException(status_code=403, detail="Only the organizer can manage volunteers")
+    # --- SECURITY FIX END ---
+    
     old_status = reg.status
     new_status = payload.status
     reg.status = new_status
@@ -179,17 +193,15 @@ async def update_registration_status(
     # Update event headcount based on status change
     # If rejecting someone who was previously counted (pending/confirmed)
     if new_status == 'rejected' and old_status != 'rejected':
-        event = session.get(Event, reg.eventId)
-        if event:
-            event.currentVolunteers = max(0, event.currentVolunteers - 1)
-            session.add(event)
+        # We already have 'event' loaded from the security check above
+        event.currentVolunteers = max(0, event.currentVolunteers - 1)
+        session.add(event)
             
     # If re-approving someone who was rejected
     elif old_status == 'rejected' and new_status != 'rejected':
-        event = session.get(Event, reg.eventId)
-        if event:
-            event.currentVolunteers += 1
-            session.add(event)
+        # We already have 'event' loaded from the security check above
+        event.currentVolunteers += 1
+        session.add(event)
 
     session.add(reg)
     session.commit()
