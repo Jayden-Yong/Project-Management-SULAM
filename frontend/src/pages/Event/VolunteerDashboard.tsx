@@ -24,7 +24,7 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
 
   // --- State: UI ---
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'history' | 'saved'>('upcoming');
+  const [activeTab, setActiveTab] = useState<'schedule' | 'pending' | 'history' | 'saved'>('schedule');
 
   // --- State: Feedback Modal ---
   const [feedbackModal, setFeedbackModal] = useState<{ isOpen: boolean, eventId: string, eventTitle: string } | null>(null);
@@ -83,7 +83,8 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
   // Helper Logic
   // ==========================================
 
-  const upcomingEvents = registrations.filter(r => r.eventStatus === 'upcoming');
+  const scheduledEvents = registrations.filter(r => r.eventStatus === 'upcoming' && r.status === 'confirmed');
+  const pendingEvents = registrations.filter(r => r.eventStatus === 'upcoming' && r.status === 'pending');
   const pastEvents = registrations.filter(r => r.eventStatus === 'completed' && r.status === 'confirmed');
   const totalPoints = pastEvents.length * 5;
 
@@ -151,9 +152,10 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
       {/* Navigation Tabs */}
       <div className="bg-slate-100 p-1.5 rounded-2xl mb-6 flex">
         {[
-          { id: 'upcoming', label: 'Upcoming' },
+          { id: 'schedule', label: 'My Schedule' },
+          { id: 'pending', label: `Applications (${pendingEvents.length})` },
           { id: 'history', label: 'History' },
-          { id: 'saved', label: `Saved (${bookmarkedEvents.length})` }
+          { id: 'saved', label: 'Saved' }
         ].map((tab) => (
           <button
             key={tab.id}
@@ -192,21 +194,26 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
                 </div>
               ))
             )
-          ) : activeTab === 'upcoming' && upcomingEvents.length === 0 ? (
+          ) : activeTab === 'schedule' && scheduledEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-              <span className="text-3xl mb-2">📋</span>
-              <p className="text-sm">No upcoming requests.</p>
+              <span className="text-3xl mb-2">📅</span>
+              <p className="text-sm">No confirmed upcoming events.</p>
+            </div>
+          ) : activeTab === 'pending' && pendingEvents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+              <span className="text-3xl mb-2">⏳</span>
+              <p className="text-sm">No pending applications.</p>
             </div>
           ) : activeTab === 'history' && pastEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-              <span className="text-3xl mb-2">⏳</span>
+              <span className="text-3xl mb-2">✅</span>
               <p className="text-sm">No completed events yet.</p>
             </div>
           ) : (
-            (activeTab === 'upcoming' ? upcomingEvents : pastEvents).map(reg => (
+            (activeTab === 'schedule' ? scheduledEvents : activeTab === 'pending' ? pendingEvents : pastEvents).map(reg => (
               <div key={reg.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-primary-100 transition-colors">
                 <div className="flex items-start gap-4">
-                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${activeTab === 'upcoming' ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600'}`}>
+                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${activeTab === 'schedule' ? 'bg-blue-50 text-blue-600' : (activeTab === 'pending' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600')}`}>
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   </div>
                   <div>
