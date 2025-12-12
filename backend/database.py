@@ -11,9 +11,6 @@ engine = create_engine(
     echo=settings.DEBUG,
     connect_args={
         "keepalives": 1,
-        "keepalives_idle": 30,
-        "keepalives_interval": 10,
-        "keepalives_count": 5,
     }
 )
 
