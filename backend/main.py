@@ -323,17 +323,7 @@ async def toggle_bookmark(
     bookmarks = session.exec(select(Bookmark).where(Bookmark.userId == user_id)).all()
     return [b.eventId for b in bookmarks]
 
-@app.get("/users/{user_id}/badges")
-async def get_user_badges(user_id: str):
-    """Static mock badges for demo purposes."""
-    return [{
-        "id": "1",
-        "name": "First Step",
-        "description": "Joined your first event",
-        "icon": "🌱",
-        "color": "bg-green-50 text-green-600",
-        "earnedAt": "2023-10-01"
-    }]
+
 
 if __name__ == "__main__":
     import uvicorn
