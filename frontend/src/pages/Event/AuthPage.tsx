@@ -18,7 +18,9 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
 
   // Verification State
   const [pendingVerification, setPendingVerification] = useState(false);
+  const [pendingReset, setPendingReset] = useState(false);
   const [code, setCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,11 +40,12 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
 
     try {
       if (isForgot) {
+        // --- STEP 1: REQUEST RESET CODE ---
         await signIn?.create({
           strategy: "reset_password_email_code",
           identifier: email,
         });
-        setError('Password reset functionality is limited in this demo. Check Clerk docs.');
+        setPendingReset(true);
         setLoading(false);
         return;
       }
@@ -90,7 +93,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
     }
   };
 
-  // Handle Verification Code Submit
+  // Handle Verification Code Submit (Sign Up)
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -118,14 +121,47 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
     }
   };
 
+  // Handle Password Reset (Step 2)
+  const handleResetVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    if (!isSignInLoaded) return;
+
+    try {
+      const result = await signIn.attemptFirstFactor({
+        strategy: "reset_password_email_code",
+        code,
+        password: newPassword,
+      });
+
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
+        navigate('/dashboard');
+      } else {
+        console.error(result);
+        setError("Reset failed. Code might be invalid.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.errors?.[0]?.message || 'Detailed reset failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const resetState = () => {
     setError('');
     setEmail('');
     setPassword('');
     setName('');
     setIsForgot(false);
+    setIsForgot(false);
     setPendingVerification(false);
+    setPendingReset(false);
     setCode('');
+    setNewPassword('');
   };
 
   return (
