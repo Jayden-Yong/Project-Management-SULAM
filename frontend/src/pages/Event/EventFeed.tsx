@@ -20,21 +20,25 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
   // Interactive State
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [userBookmarks, setUserBookmarks] = useState<string[]>([]);
+  const [bookmarkingId, setBookmarkingId] = useState<string | null>(null);
 
   // 1. Initial Data Load
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        // NEW: Pass 'upcoming' directly to API to avoid fetching large history
-        const data = await getEvents('upcoming');
+        const [eventsData, bookmarksData] = await Promise.all([
+          getEvents('upcoming'),
+          user ? import('../../services/api').then(m => m.getUserBookmarks(user.id)) : Promise.resolve([])
+        ]);
 
-        // We still sort client-side for better UX (soonest first)
-        const sorted = data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        // Sort: Soonest first
+        const sorted = eventsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
         setEvents(sorted);
-        setFilteredEvents(sorted); // Initialize filtered list
+        setFilteredEvents(sorted);
+        setUserBookmarks(bookmarksData as string[]);
       } catch (e) {
-        console.error("Failed to load events", e);
+        console.error("Failed to load feed", e);
       } finally {
         setLoading(false);
       }
@@ -94,11 +98,24 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
 
   const handleBookmark = async (eventId: string) => {
     if (!user) return onNavigate('auth');
+
+    // Optimistic UI Update
+    const isCurrentlyBookmarked = userBookmarks.includes(eventId);
+    const newBookmarksList = isCurrentlyBookmarked
+      ? userBookmarks.filter(id => id !== eventId)
+      : [...userBookmarks, eventId];
+
+    setUserBookmarks(newBookmarksList);
+    setBookmarkingId(eventId);
+
     try {
-      const newBookmarks = await toggleBookmark(user.id, eventId);
-      setUserBookmarks(newBookmarks);
+      await toggleBookmark(user.id, eventId);
     } catch (e) {
-      console.error(e);
+      console.error("Bookmark failed", e);
+      // Revert on failure
+      setUserBookmarks(userBookmarks);
+    } finally {
+      setBookmarkingId(null);
     }
   };
 
@@ -147,8 +164,8 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
               key={c}
               onClick={() => setCategoryFilter(c)}
               className={`h-10 px-5 rounded-full text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${categoryFilter === c
-                  ? 'bg-primary-600 text-white shadow-md'
-                  : 'bg-white text-slate-600 ring-1 ring-gray-200 hover:bg-gray-50'
+                ? 'bg-primary-600 text-white shadow-md'
+                : 'bg-white text-slate-600 ring-1 ring-gray-200 hover:bg-gray-50'
                 }`}
             >
               {c}
@@ -181,8 +198,18 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
                 {event.imageUrl && (
                   <div className="h-48 w-full overflow-hidden relative">
                     <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm border border-white/50">
-                      {event.category}
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <div className="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm border border-white/50">
+                        {event.category}
+                      </div>
+                      {!isOrganizer && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleBookmark(event.id); }}
+                          className={`w-8 h-8 flex items-center justify-center rounded-full shadow-sm transition-all active:scale-90 ${isBookmarked ? 'bg-red-500 text-white' : 'bg-white text-slate-400 hover:text-red-500'}`}
+                        >
+                          {bookmarkingId === event.id ? '...' : (isBookmarked ? '♥' : '♡')}
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -225,8 +252,8 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
                       onClick={() => handleJoin(event.id)}
                       disabled={joiningId === event.id || isFull}
                       className={`w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center ${isFull
-                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                          : 'bg-slate-900 text-white hover:bg-primary-600 shadow-lg'
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                        : 'bg-slate-900 text-white hover:bg-primary-600 shadow-lg'
                         }`}
                     >
                       {joiningId === event.id ? 'Sending...' : (isFull ? 'Quota Full' : 'Join Event')}
