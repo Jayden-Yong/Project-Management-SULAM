@@ -10,6 +10,7 @@ interface Props {
     pastEvents: Registration[];
     bookmarkedEvents: Event[];
     onOpenFeedback: (eventId: string, title: string, feedbackId?: string) => void;
+    onViewEvent: (eventId: string) => void; // Added prop
     user: { id: string }; // Minimal user needed for API call
 }
 
@@ -23,7 +24,7 @@ const getStatusPill = (status: string) => {
 };
 
 export const VolunteerEventList: React.FC<Props> = ({
-    loading, activeTab, scheduledEvents, pendingEvents, pastEvents, bookmarkedEvents, onOpenFeedback, user
+    loading, activeTab, scheduledEvents, pendingEvents, pastEvents, bookmarkedEvents, onOpenFeedback, onViewEvent, user
 }) => {
 
     if (loading) {
@@ -63,7 +64,12 @@ export const VolunteerEventList: React.FC<Props> = ({
                             <h4 className="font-bold text-slate-900 text-base">{event.title}</h4>
                             <p className="text-xs text-slate-500 mt-1">📅 {event.date} • 📍 {event.location}</p>
                         </div>
-                        <span className="bg-primary-50 text-primary-700 text-xs px-3 py-1.5 rounded-lg font-bold">View</span>
+                        <button
+                            onClick={() => onViewEvent(event.id)}
+                            className="bg-primary-50 text-primary-700 text-xs px-3 py-1.5 rounded-lg font-bold hover:bg-primary-100 transition-colors"
+                        >
+                            View
+                        </button>
                     </div>
                 ))}
             </div>
@@ -87,8 +93,12 @@ export const VolunteerEventList: React.FC<Props> = ({
     return (
         <div className="space-y-3 min-h-[200px]">
             {eventsToShow.map(reg => (
-                <div key={reg.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-primary-100 transition-colors">
-                    <div className="flex items-start gap-4">
+                <div
+                    key={reg.id}
+                    onClick={() => onViewEvent(reg.eventId)} // Make entire card clickable
+                    className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-primary-100 hover:shadow-md cursor-pointer transition-all active:scale-[0.99]"
+                >
+                    <div className="flex items-start gap-4 pointer-events-none"> {/* Disable pointer events on children to prevent misclicks context issues if needed, but here mainly for style */}
                         <div className={`h-12 w-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${activeTab === 'schedule' ? 'bg-blue-50 text-blue-600' : (activeTab === 'pending' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600')}`}>
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         </div>
@@ -107,14 +117,14 @@ export const VolunteerEventList: React.FC<Props> = ({
                                 <span className="text-xs font-bold text-white bg-gradient-to-r from-yellow-400 to-yellow-500 px-3 py-1 rounded-full shadow-sm">+5 Merit</span>
                                 {!reg.hasFeedback ? (
                                     <button
-                                        onClick={() => onOpenFeedback(reg.eventId, reg.eventTitle || 'Event')}
+                                        onClick={(e) => { e.stopPropagation(); onOpenFeedback(reg.eventId, reg.eventTitle || 'Event') }}
                                         className="text-xs bg-white border border-slate-200 px-4 py-2 rounded-xl hover:bg-slate-50 text-slate-700 font-bold shadow-sm transition-transform active:scale-95"
                                     >
                                         Rate Event
                                     </button>
                                 ) : (
                                     <button
-                                        onClick={() => handleEditClick(reg.eventId, reg.eventTitle || 'Event')}
+                                        onClick={(e) => { e.stopPropagation(); handleEditClick(reg.eventId, reg.eventTitle || 'Event') }}
                                         className="text-xs text-slate-400 font-medium px-2 hover:text-primary-600 underline decoration-dotted underline-offset-2 transition-colors"
                                     >
                                         Edit Review

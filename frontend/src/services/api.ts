@@ -65,6 +65,14 @@ export const getEvents = async (
 };
 
 /**
+ * Fetch a single event by ID.
+ */
+export const getEvent = async (eventId: string): Promise<Event> => {
+  const { data } = await api.get(`/events/${eventId}`);
+  return data;
+};
+
+/**
  * Fetch events specifically managed by a given organizer.
  */
 export const getOrganizerEvents = async (organizerId: string): Promise<Event[]> => {

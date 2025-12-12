@@ -39,6 +39,12 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
 
+  // --- State: Details Modal ---
+  const [viewEvent, setViewEvent] = useState<Event | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+
+
   // ==========================================
   // Data Fetching
   // ==========================================
@@ -130,6 +136,26 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
     }
   };
 
+  const handleViewDetails = async (eventId: string) => {
+    try {
+      // Check if it's a bookmarked event -> we already have the full object
+      const bookmarked = bookmarkedEvents.find(e => e.id === eventId);
+      if (bookmarked) {
+        setViewEvent(bookmarked);
+        setShowDetailsModal(true);
+        return;
+      }
+
+      // Otherwise fetch fresh
+      const eventData = await getEvent(eventId);
+      setViewEvent(eventData);
+      setShowDetailsModal(true);
+    } catch (e) {
+      console.error("Failed to load event details", e);
+      alert("Could not load event details.");
+    }
+  };
+
 
   // ==========================================
   // Helper Logic
@@ -170,7 +196,14 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
         pastEvents={pastEvents}
         bookmarkedEvents={bookmarkedEvents}
         onOpenFeedback={openFeedbackModal}
+        onViewEvent={handleViewDetails} // Passed handler
         user={user}
+      />
+
+      <EventDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        event={viewEvent}
       />
 
       {/* Responsive Feedback Modal */}

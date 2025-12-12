@@ -158,6 +158,19 @@ async def get_events(
     query = query.offset(skip).limit(limit)
     return session.exec(query).all()
 
+@app.get("/events/{event_id}", response_model=Event)
+async def get_event_by_id(
+    event_id: str,
+    session: Session = Depends(get_session)
+):
+    """
+    Fetch a single event by ID.
+    """
+    event = session.get(Event, event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return event
+
 @app.post("/events", response_model=Event)
 async def create_event(
     event: Event, 
