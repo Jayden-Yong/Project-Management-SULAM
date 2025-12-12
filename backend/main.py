@@ -44,6 +44,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# 1. Gzip Compression (Saves bandwidth on free tier)
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
