@@ -45,6 +45,38 @@ app.add_middleware(
 # Endpoints
 # ==========================================
 
+# --- DEPENDENCIES ---
+async def get_current_organizer(current_user: dict = Depends(get_current_user)) -> dict:
+    if not is_organizer(current_user):
+        raise HTTPException(status_code=403, detail="Only organizers can perform this action")
+    return current_user
+
+# --- LOGIC HANDLERS ---
+def calculate_badges_logic(completed_count: int) -> List[dict]:
+    badges = []
+    today = datetime.date.today().isoformat()
+    
+    if completed_count >= 1:
+        badges.append({
+            "id": "badge_1", "name": "First Step", "description": "Completed your first volunteer mission",
+            "icon": "🌱", "color": "bg-green-50 text-green-600", "earnedAt": today
+        })
+    if completed_count >= 3:
+        badges.append({
+            "id": "badge_3", "name": "Helping Hand", "description": "Completed 3 volunteer missions",
+            "icon": "🤝", "color": "bg-blue-50 text-blue-600", "earnedAt": today
+        })
+    if completed_count >= 5:
+        badges.append({
+            "id": "badge_5", "name": "Super Star", "description": "A true community hero (5+ missions)",
+            "icon": "⭐", "color": "bg-yellow-50 text-yellow-600", "earnedAt": today
+        })
+    return badges
+
+# ==========================================
+# Endpoints
+# ==========================================
+
 @app.get("/")
 async def root():
     return {
@@ -63,8 +95,8 @@ async def health_check():
 async def get_events(
     organizerId: Optional[str] = None, 
     status: Optional[str] = None, 
-    skip: int = 0,    # FIX 3: Added pagination skip
-    limit: int = 100, # FIX 3: Added pagination limit (default 100 to prevent crash)
+    skip: int = 0,    
+    limit: int = 100, 
     session: Session = Depends(get_session)
 ):
     """Fetch all events, optionally filtered by organizer or status."""
@@ -74,25 +106,19 @@ async def get_events(
     if status:
         query = query.where(Event.status == status)
     
-    # FIX 3: Apply pagination
     query = query.offset(skip).limit(limit)
-    
     return session.exec(query).all()
 
 @app.post("/events", response_model=Event)
 async def create_event(
     event: Event, 
     session: Session = Depends(get_session),
-    current_user: dict = Depends(get_current_user)
+    current_organizer: dict = Depends(get_current_organizer) # REFACTORED
 ):
     """Create a new event. Requires Auth & Organizer Role."""
     
-    # FIX 4: Security - Do not trust the body. Force ID from token.
-    event.organizerId = current_user.get("sub")
-    
-    # 2. SECURITY: Enforce Organizer Role
-    if not is_organizer(current_user):
-        raise HTTPException(status_code=403, detail="Only organizers can create events")
+    event.organizerId = current_organizer.get("sub")
+    # Organized check removed (handled by dependency)
 
     session.add(event)
     session.commit()
@@ -104,19 +130,16 @@ async def update_event_status(
     event_id: str, 
     payload: UpdateEventStatusRequest, 
     session: Session = Depends(get_session),
-    current_user: dict = Depends(get_current_user)
+    current_organizer: dict = Depends(get_current_organizer) # REFACTORED
 ):
     """Update event status (e.g. to 'completed')."""
     event = session.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     
-    if event.organizerId != current_user.get("sub"):
+    if event.organizerId != current_organizer.get("sub"):
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    if not is_organizer(current_user):
-        raise HTTPException(status_code=403, detail="Only organizers can update events")
-
     event.status = payload.status
     session.add(event)
     session.commit()
@@ -131,12 +154,10 @@ async def join_event(
     current_user: dict = Depends(get_current_user)
 ):
     """Register a user for an event."""
-    # FIX 4 (Partial): Ensure users can only join as themselves
     if payload.userId != current_user.get("sub"):
         raise HTTPException(status_code=403, detail="Cannot join for another user")
 
     # FIX 1: Race Condition Fix (Code Level)
-    # Lock the event row to serialize join requests for this event
     statement = select(Event).where(Event.id == event_id).with_for_update()
     event = session.exec(statement).one_or_none()
     
@@ -151,7 +172,6 @@ async def join_event(
     if existing_reg:
         raise HTTPException(status_code=400, detail="Already joined")
     
-    # Create registration
     new_reg = Registration(
         eventId=event_id,
         userId=payload.userId,
@@ -182,16 +202,13 @@ async def update_registration_status(
     registration_id: str, 
     payload: UpdateRegistrationStatusRequest,
     session: Session = Depends(get_session),
-    current_user: dict = Depends(get_current_user)
+    current_organizer: dict = Depends(get_current_organizer) # REFACTORED
 ):
     """Approve or Reject a volunteer."""
     reg = session.get(Registration, registration_id)
     if not reg:
         raise HTTPException(status_code=404, detail="Registration not found")
     
-    # FIX 2: Race Condition Fix. 
-    # We fetch the event using 'with_for_update()' to lock the row.
-    # This prevents two requests from reading the same 'currentVolunteers' count simultaneously.
     event = session.exec(
         select(Event).where(Event.id == reg.eventId).with_for_update()
     ).one_or_none()
@@ -199,24 +216,19 @@ async def update_registration_status(
     if not event:
          raise HTTPException(status_code=404, detail="Associated event not found")
          
-    if event.organizerId != current_user.get("sub"):
+    if event.organizerId != current_organizer.get("sub"):
         raise HTTPException(status_code=403, detail="Only the organizer can manage volunteers")
     
     old_status = reg.status
     new_status = payload.status
     
-    # Logic to update count only when CONFIRMED and enforce MAX LIMIT
     if new_status == RegistrationStatus.CONFIRMED and old_status != RegistrationStatus.CONFIRMED:
-        # Check if event is full before confirming
         if event.currentVolunteers >= event.maxVolunteers:
-            raise HTTPException(status_code=400, detail="Event quota reached. Cannot confirm more volunteers.")
-        
-        # User is being confirmed -> Increment count
+            raise HTTPException(status_code=400, detail="Event quota reached.")
         event.currentVolunteers += 1
         session.add(event)
             
     elif old_status == RegistrationStatus.CONFIRMED and new_status != RegistrationStatus.CONFIRMED:
-        # User was confirmed but is now rejected/pending -> Decrement count
         event.currentVolunteers = max(0, event.currentVolunteers - 1)
         session.add(event)
 
@@ -339,7 +351,7 @@ async def update_event_details(
     event_id: str,
     event_update: Event, # We accept the full Event object structure
     session: Session = Depends(get_session),
-    current_user: dict = Depends(get_current_user)
+    current_organizer: dict = Depends(get_current_organizer) # REFACTORED
 ):
     """Update event details (Title, Description, Image, etc)."""
     # 1. Fetch existing
@@ -348,7 +360,7 @@ async def update_event_details(
         raise HTTPException(status_code=404, detail="Event not found")
     
     # 2. Authorization
-    if db_event.organizerId != current_user.get("sub"):
+    if db_event.organizerId != current_organizer.get("sub"):
         raise HTTPException(status_code=403, detail="Not authorized to edit this event")
     
     # 3. Update fields (excluding ID and OrganizerID to be safe)
@@ -385,7 +397,6 @@ async def get_user_badges(
     Fixes 'Cannot add badge' by automating the process.
     """
     # 1. Count completed & confirmed registrations
-    # Note: We need to join Registration with Event to check if the event is actually completed
     statement = (
         select(Registration)
         .join(Event)
@@ -395,41 +406,8 @@ async def get_user_badges(
     )
     completed_count = len(session.exec(statement).all())
     
-    badges = []
-
-    # Logic: Award badges based on count
-    if completed_count >= 1:
-        badges.append({
-            "id": "badge_1",
-            "name": "First Step",
-            "description": "Completed your first volunteer mission",
-            "icon": "🌱",
-            "color": "bg-green-50 text-green-600",
-            "earnedAt": datetime.date.today().isoformat() # Fallback for now, could fetch from registration joinedAt
-        })
-    
-    if completed_count >= 3:
-        badges.append({
-            "id": "badge_3",
-            "name": "Helping Hand",
-            "description": "Completed 3 volunteer missions",
-            "icon": "🤝",
-            "color": "bg-blue-50 text-blue-600",
-            "earnedAt": datetime.date.today().isoformat()
-        })
-
-    if completed_count >= 5:
-        badges.append({
-            "id": "badge_5",
-            "name": "Super Star",
-            "description": "A true community hero (5+ missions)",
-            "icon": "⭐",
-            "color": "bg-yellow-50 text-yellow-600",
-            "earnedAt": datetime.date.today().isoformat()
-        })
-
-    returnSV = badges
-    return badges
+    # REFACTORED: Use helper logic
+    return calculate_badges_logic(completed_count)
 
 # ==========================================
 # OPTIMIZED ENDPOINTS (Performance)
@@ -440,7 +418,7 @@ async def get_organizer_dashboard_stats(
     limit: int = 100, 
     skip: int = 0,
     session: Session = Depends(get_session),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_organizer) # REFACTORED: Use dependency
 ):
     """
     Optimized endpoint for Organizer Dashboard.
