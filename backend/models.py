@@ -2,7 +2,7 @@ import uuid
 from typing import Optional
 from datetime import date
 from enum import Enum
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, UniqueConstraint
 from pydantic import field_validator
 
 # ==========================================
@@ -53,6 +53,8 @@ class Registration(SQLModel, table=True):
     joinedAt: str
     userName: Optional[str] = "Student Volunteer"
     userAvatar: Optional[str] = None
+
+    __table_args__ = (UniqueConstraint("userId", "eventId", name="unique_registration"),)
 
 class Feedback(SQLModel, table=True):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)

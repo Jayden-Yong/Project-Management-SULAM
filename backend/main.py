@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import Session, select, SQLModel
+from sqlmodel import Session, select, SQLModel, func
 
 from config import settings
 from database import engine, get_session
@@ -135,7 +135,11 @@ async def join_event(
     if payload.userId != current_user.get("sub"):
         raise HTTPException(status_code=403, detail="Cannot join for another user")
 
-    event = session.get(Event, event_id)
+    # FIX 1: Race Condition Fix (Code Level)
+    # Lock the event row to serialize join requests for this event
+    statement = select(Event).where(Event.id == event_id).with_for_update()
+    event = session.exec(statement).one_or_none()
+    
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
@@ -401,7 +405,7 @@ async def get_user_badges(
             "description": "Completed your first volunteer mission",
             "icon": "🌱",
             "color": "bg-green-50 text-green-600",
-            "earnedAt": "2023-01-01" # In a real app, you'd calculate date
+            "earnedAt": datetime.date.today().isoformat() # Fallback for now, could fetch from registration joinedAt
         })
     
     if completed_count >= 3:
@@ -411,7 +415,7 @@ async def get_user_badges(
             "description": "Completed 3 volunteer missions",
             "icon": "🤝",
             "color": "bg-blue-50 text-blue-600",
-            "earnedAt": "2023-02-01"
+            "earnedAt": datetime.date.today().isoformat()
         })
 
     if completed_count >= 5:
@@ -421,7 +425,7 @@ async def get_user_badges(
             "description": "A true community hero (5+ missions)",
             "icon": "⭐",
             "color": "bg-yellow-50 text-yellow-600",
-            "earnedAt": "2023-03-01"
+            "earnedAt": datetime.date.today().isoformat()
         })
 
     returnSV = badges
@@ -433,39 +437,47 @@ async def get_user_badges(
 
 @app.get("/organizers/dashboard", response_model=List[EventReadWithStats])
 async def get_organizer_dashboard_stats(
+    limit: int = 100, 
+    skip: int = 0,
     session: Session = Depends(get_session),
     current_user: dict = Depends(get_current_user)
 ):
     """
     Optimized endpoint for Organizer Dashboard.
-    Fetches events AND pre-calculates rating/feedback count in one go.
+    Fetches events AND pre-calculates rating/feedback count in one go using SQL Aggregation.
     """
     if not is_organizer(current_user):
          raise HTTPException(status_code=403, detail="Access denied")
 
     organizer_id = current_user.get("sub")
     
-    # 1. Fetch all events for this organizer
-    events = session.exec(select(Event).where(Event.organizerId == organizer_id)).all()
+    # FIX 2 & 3: SQL Aggregation (Orbiting N+1) & Pagination
+    # We join Event with Feedback (LEFT JOIN to keep events with 0 feedback)
+    # We group by Event.id to aggregate feedback stats per event
+    query = (
+        select(
+            Event, 
+            func.coalesce(func.avg(Feedback.rating), 0.0).label("avgRating"),
+            func.count(Feedback.id).label("feedbackCount")
+        )
+        .outerjoin(Feedback, Event.id == Feedback.eventId)
+        .where(Event.organizerId == organizer_id)
+        .group_by(Event.id)
+        .offset(skip)
+        .limit(limit)
+    )
     
-    results = []
-    for event in events:
-        # 2. Calculate stats (Could be further optimized with SQL GROUP BY, but this is Step 1)
-        # Fetching strictly necessary data
-        feedbacks = session.exec(select(Feedback).where(Feedback.eventId == event.id)).all()
-        
-        avg_rating = 0.0
-        if feedbacks:
-            avg_rating = sum(f.rating for f in feedbacks) / len(feedbacks)
-            
-        # Create Read Model
+    results = session.exec(query).all()
+    
+    dashboard_data = []
+    for event, avg_rating, feedback_count in results:
+        # Map tuple result back to our Pydantic model
         event_with_stats = EventReadWithStats.model_validate(event)
         event_with_stats.avgRating = round(avg_rating, 1)
-        event_with_stats.feedbackCount = len(feedbacks)
+        event_with_stats.feedbackCount = feedback_count
+        dashboard_data.append(event_with_stats)
         
-        results.append(event_with_stats)
-        
-    return results
+    return dashboard_data
 
 @app.get("/users/me/bookmarks/events", response_model=List[Event])
 async def get_my_bookmarked_events(
