@@ -1,4 +1,4 @@
-# UMission - Project Managment Volunteerism Platform
+# UMission - Project Management Volunteerism Platform
 
 **UMission** is a modern, gamified volunteerism platform designed to bridge the gap between student volunteers and club organizers. Built with a high-performance **FastAPI** backend and a reactive **React 19** frontend, it features secure identity management via **Clerk**, real-time concurrency control, and cloud object storage via **Supabase**.
 
@@ -23,6 +23,7 @@ The application follows a clean **Client-Server Architecture**:
 *   **Discovery Feed**:
     *   **Browse & Search**: Filter events by category (e.g., "Education") or Keywords (e.g., "KK12").
     *   **Bookmarks (NEW)**: Save events to your personal "Saved" list using the Heart button.
+    *   **Event Details**: View full mission objectives, tasks, and location maps.
     *   **One-Click Join**: Send requests instantly. View status in the **"Applications"** tab.
 *   **Student Dashboard**:
     *   **Digital Profile**: Personalized ID card showing valid volunteer status.
@@ -211,6 +212,7 @@ npm run dev
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/events` | Public | List all events (supports filtering by `organizerId`, `status`). |
+| `GET` | `/events/{id}` | Public | Get full details of a specific event. |
 | `POST` | `/events` | Organizer | Create a new event. |
 | `PUT` | `/events/{id}` | Organizer | Update event details (Title, Date, Description). |
 | `PATCH` | `/events/{id}` | Organizer | Update event status (e.g., `upcoming` → `completed`). |

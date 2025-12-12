@@ -6,13 +6,15 @@ import {
   getUserBadges,
   getUserRegistrations,
   submitFeedback,
-  updateFeedback
+  updateFeedback,
+  getEvent
 } from '../../services/api';
 import { Badge, Event, Registration, User } from '../../types';
 import { VolunteerBadges } from './components/dashboard/VolunteerBadges';
 import { VolunteerEventList } from './components/dashboard/VolunteerEventList';
 import { VolunteerStatsCard } from './components/dashboard/VolunteerStatsCard';
 import { VolunteerTabs } from './components/dashboard/VolunteerTabs';
+import { EventDetailsModal } from './components/EventDetailsModal';
 
 interface Props {
   user: User;
