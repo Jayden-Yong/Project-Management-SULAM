@@ -10,7 +10,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom', '@clerk/clerk-react'],
-          ui: ['lucide-react', 'framer-motion']
+          ui: ['lucide-react']
         }
       }
     }
