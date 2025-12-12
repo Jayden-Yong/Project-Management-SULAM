@@ -1,5 +1,9 @@
 import React from 'react';
 
+/**
+ * Full-screen loading indicator.
+ * Used during route transitions or data fetching.
+ */
 export const PageLoader: React.FC = () => {
     return (
         <div className="min-h-[50vh] flex items-center justify-center">

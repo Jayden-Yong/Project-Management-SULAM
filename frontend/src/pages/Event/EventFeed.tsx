@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
+import { getEvents, getUserBookmarks, joinEvent, toggleBookmark } from '../../services/api';
 import { Event, User, UserRole } from '../../types';
-import { getEvents, joinEvent, toggleBookmark, getUserBookmarks } from '../../services/api';
 
 interface Props {
   user: User | null;
@@ -13,7 +14,8 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
-  // Filters
+  // --- Filtering State ---
+  // Filters are applied server-side for efficiency where possible
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [locationFilter, setLocationFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');

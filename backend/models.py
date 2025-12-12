@@ -1,8 +1,9 @@
 import uuid
-from typing import Optional
 from datetime import date
 from enum import Enum
-from sqlmodel import SQLModel, Field, UniqueConstraint
+from typing import Optional
+
+from sqlmodel import Field, SQLModel, UniqueConstraint
 
 # ==========================================
 # Enums (Domain Constants)

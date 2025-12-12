@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { Registration } from '../../../types';
 
 interface Props {
@@ -9,6 +10,11 @@ interface Props {
     eventId: string;
     onAction: (regId: string, action: 'confirmed' | 'rejected', eventId: string) => void;
 }
+
+/**
+ * Modal for Managing Volunteers.
+ * Allows organizers to approve or reject volunteer applications.
+ */
 
 export const ParticipantsModal: React.FC<Props> = ({
     isOpen, onClose, participants, eventTitle, eventId, onAction

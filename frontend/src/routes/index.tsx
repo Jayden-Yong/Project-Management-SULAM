@@ -1,10 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { SignedIn, SignedOut, useUser } from '@clerk/clerk-react';
 import { lazy, Suspense } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+
 import { Navbar } from '../components/Navbar';
+import { PageLoader } from '../components/PageLoader';
 import { useUserRole } from '../hooks/useUserRole';
 import { User, UserRole } from '../types';
-import { PageLoader } from '../components/PageLoader';
 
 // Lazy Load Pages
 const AuthPage = lazy(() => import('../pages/Event/AuthPage').then(module => ({ default: module.AuthPage })));
@@ -52,6 +53,10 @@ const FeedWithUser = () => {
     return <EventFeed user={user} onNavigate={(path) => navigate(`/${path}`)} />;
 }
 
+/**
+ * Main Routing Configuration.
+ * Defines all application routes and access control (Auth/Role guards).
+ */
 export default function AppRoutes() {
     return (
         <BrowserRouter>

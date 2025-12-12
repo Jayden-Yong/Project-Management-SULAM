@@ -3,20 +3,24 @@ import { useAuth } from '@clerk/clerk-react'
 import { setupAxiosInterceptors } from './services/api' // Updated import
 import AppRoutes from './routes/'
 
+/**
+ * Root Application Component.
+ * Handles authentication initialization and global routing.
+ */
 function App() {
   const { getToken, isLoaded } = useAuth();
   const [authReady, setAuthReady] = useState(false);
 
+  // Initialize Axios interceptors with the Clerk token provider
+  // This ensures all API requests have the Authorization header if logged in
   useEffect(() => {
     if (isLoaded) {
-      // Pass the getToken function to the API service
-      // This allows axios to call it dynamically before every request
       setupAxiosInterceptors(getToken);
       setAuthReady(true);
     }
   }, [isLoaded, getToken]);
 
-  // Show a loading spinner while we wait for auth to initialize
+  // Loading State: Wait for Clerk + Axios setup before rendering routes
   if (!isLoaded || !authReady) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">

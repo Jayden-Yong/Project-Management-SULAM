@@ -1,9 +1,13 @@
+import { useClerk, useUser } from '@clerk/clerk-react';
+import { LogOut, Menu, X } from 'lucide-react';
 import React, { useState } from 'react';
-import { useUser, useClerk } from '@clerk/clerk-react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { UserRole } from '../types';
-import { Menu, X, LogOut } from 'lucide-react';
 
+/**
+ * Global Navigation Bar.
+ * Responsive component that handles user navigation, auth state display, and mobile menu toggling.
+ */
 export const Navbar: React.FC = () => {
   const { user, isSignedIn } = useUser();
   const { signOut } = useClerk();

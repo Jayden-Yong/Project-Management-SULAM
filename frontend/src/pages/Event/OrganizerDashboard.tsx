@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../services/supabaseClient';
-import { User, Event, Registration, Feedback, EventWithStats } from '../../types';
+
 import {
   createEvent,
-  getOrganizerStats,
-  updateEventStatus,
-  getFeedbacks,
   getEventRegistrations,
-  updateRegistrationStatus,
-  updateEvent
+  getFeedbacks,
+  getOrganizerStats,
+  updateEvent,
+  updateEventStatus,
+  updateRegistrationStatus
 } from '../../services/api';
-
-// Components
+import { supabase } from '../../services/supabaseClient';
+import { Event, EventWithStats, Feedback, Registration, User } from '../../types';
 import { EventFormModal } from './components/EventFormModal';
 import { ParticipantsModal } from './components/ParticipantsModal';
 import { ReviewsModal } from './components/ReviewsModal';
@@ -26,6 +25,11 @@ interface Props {
 
 // ==========================================
 // Component: Organizer Dashboard
+//Map of functionality:
+// 1. Fetch Events (Stats enriched)
+// 2. Add/Edit Events (Modal)
+// 3. Manage Volunteers (Modal)
+// 4. View Reviews (Modal)
 // ==========================================
 
 export const OrganizerDashboard: React.FC<Props> = ({ user }) => {

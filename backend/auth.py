@@ -1,7 +1,8 @@
-from fastapi import HTTPException, Security
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt
 import httpx
+from fastapi import HTTPException, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import jwt
+
 from config import settings
 
 security = HTTPBearer()

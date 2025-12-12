@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { Feedback } from '../../../types';
 
 interface Props {
@@ -7,6 +8,11 @@ interface Props {
     reviews: Feedback[];
     eventTitle: string;
 }
+
+/**
+ * Modal for Viewing Event Reviews.
+ * Displays list of student feedbacks and ratings.
+ */
 
 export const ReviewsModal: React.FC<Props> = ({ isOpen, onClose, reviews, eventTitle }) => {
     if (!isOpen) return null;

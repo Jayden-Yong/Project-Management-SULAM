@@ -1,3 +1,8 @@
+/**
+ * Shared Type Definitions.
+ * Aligns with Backend Models (where applicable) and Frontend Interfaces.
+ */
+
 // ==========================================
 // Enums & Constants
 // ==========================================

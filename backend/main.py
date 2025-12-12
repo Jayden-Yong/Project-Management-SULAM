@@ -1,19 +1,27 @@
 import datetime
-from typing import List, Optional
 from contextlib import asynccontextmanager
+from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import Session, select, SQLModel, func
+from fastapi.middleware.gzip import GZipMiddleware
+from sqlmodel import Session, SQLModel, col, func, select
 
+from auth import get_current_user, is_organizer
 from config import settings
 from database import engine, get_session
-from auth import get_current_user, is_organizer
 from models import (
-    Event, Registration, Feedback, Bookmark, 
-    BookmarkRequest, JoinRequest, 
-    UpdateEventStatusRequest, UpdateRegistrationStatusRequest, UpdateFeedbackRequest,
-    RegistrationStatus, EventReadWithStats
+    Bookmark,
+    BookmarkRequest,
+    Event,
+    EventReadWithStats,
+    Feedback,
+    JoinRequest,
+    Registration,
+    RegistrationStatus,
+    UpdateEventStatusRequest,
+    UpdateFeedbackRequest,
+    UpdateRegistrationStatusRequest,
 )
 
 # ==========================================
@@ -44,8 +52,8 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# 1. Gzip Compression (Saves bandwidth on free tier)
-from fastapi.middleware.gzip import GZipMiddleware
+# 1. Gzip Compression
+# Saves bandwidth by compressing responses > 1000 bytes
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.add_middleware(
@@ -79,6 +87,12 @@ async def get_current_organizer(current_user: dict = Depends(get_current_user)) 
 def calculate_badges_logic(completed_count: int) -> List[dict]:
     """
     Determines which badges a user has earned based on their completed mission count.
+    
+    Args:
+        completed_count (int): The number of missions the user has completed.
+        
+    Returns:
+        List[dict]: A list of badge objects.
     """
     badges = []
     today = datetime.date.today().isoformat()
@@ -251,7 +265,7 @@ async def join_event(
         eventId=event_id,
         userId=payload.userId,
         joinedAt=datetime.date.today().isoformat(),
-        # Use provided name/avatar or fallback
+        # Use provided name/avatar or fallback to a default if missing
         userName=payload.userName or f"Student {payload.userId[-4:]}", 
         userAvatar=payload.userAvatar or "",
         status=RegistrationStatus.PENDING 

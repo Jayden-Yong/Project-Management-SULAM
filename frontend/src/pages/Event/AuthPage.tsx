@@ -1,11 +1,18 @@
-import React, { useState } from 'react';
 import { useSignIn, useSignUp } from '@clerk/clerk-react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { UserRole } from '../../types';
 
 interface AuthPageProps {
   onLoginSuccess?: () => void;
 }
+
+/**
+ * Authentication Page.
+ * Handles Login, Sign Up, and Password Reset using Clerk APIs directly.
+ * Provides a custom UI over Clerk's headless hooks.
+ */
 
 export const AuthPage: React.FC<AuthPageProps> = () => {
   const [isLogin, setIsLogin] = useState(true);

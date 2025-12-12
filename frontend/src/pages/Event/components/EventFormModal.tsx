@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { Event } from '../../../types';
 
 interface Props {
@@ -11,6 +12,11 @@ interface Props {
     uploading: boolean;
     isEditing: boolean;
 }
+
+/**
+ * Modal for Creating or Editing an Event.
+ * Handles form input and image upload preview.
+ */
 
 export const EventFormModal: React.FC<Props> = ({
     isOpen, onClose, onSubmit, formData, setFormData, onImageUpload, uploading, isEditing

@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { User, Registration, Badge, Event } from '../../types';
+
 import {
+  getBookmarkedEventsDetail,
+  getFeedbacks,
+  getUserBadges,
   getUserRegistrations,
   submitFeedback,
-  updateFeedback,
-  getUserBadges,
-  getBookmarkedEventsDetail,
-  getFeedbacks
+  updateFeedback
 } from '../../services/api';
-import { VolunteerStatsCard } from './components/dashboard/VolunteerStatsCard';
+import { Badge, Event, Registration, User } from '../../types';
 import { VolunteerBadges } from './components/dashboard/VolunteerBadges';
-import { VolunteerTabs } from './components/dashboard/VolunteerTabs';
 import { VolunteerEventList } from './components/dashboard/VolunteerEventList';
+import { VolunteerStatsCard } from './components/dashboard/VolunteerStatsCard';
+import { VolunteerTabs } from './components/dashboard/VolunteerTabs';
 
 interface Props {
   user: User;
@@ -19,6 +20,7 @@ interface Props {
 
 // ==========================================
 // Component: Volunteer Dashboard
+// Displays user activity, points, and allows feedback submission.
 // ==========================================
 
 export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
