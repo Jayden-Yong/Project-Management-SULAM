@@ -114,7 +114,7 @@ export const VolunteerEventList: React.FC<Props> = ({
                     <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 border-slate-50 pt-3 sm:pt-0">
                         {activeTab === 'history' ? (
                             <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                                <span className="text-xs font-bold text-white bg-gradient-to-r from-yellow-400 to-yellow-500 px-3 py-1 rounded-full shadow-sm">+5 Merit</span>
+                                <span className="text-xs font-bold text-white bg-gradient-to-r from-yellow-400 to-yellow-500 px-3 py-1 rounded-full shadow-sm">+5 Impact Points</span>
                                 {!reg.hasFeedback ? (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onOpenFeedback(reg.eventId, reg.eventTitle || 'Event') }}

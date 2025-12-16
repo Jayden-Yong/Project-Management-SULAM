@@ -26,7 +26,7 @@ export const VolunteerStatsCard: React.FC<Props> = ({ user, totalPoints, complet
                     <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
                         <div className="inline-flex items-center bg-white/20 px-4 py-2 rounded-full border border-white/20 backdrop-blur-md">
                             <span className="text-yellow-300 mr-2 text-lg">★</span>
-                            <span className="font-bold text-sm">{totalPoints} Merit Stars</span>
+                            <span className="font-bold text-sm">{totalPoints} Impact Points</span>
                         </div>
                         <div className="inline-flex items-center bg-white/20 px-4 py-2 rounded-full border border-white/20 backdrop-blur-md">
                             <span className="font-bold text-sm">{completedCount} Events Completed</span>
