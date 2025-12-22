@@ -202,7 +202,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
             {pendingVerification ? 'Check your Email' : (isForgot ? 'Reset Password' : (isLogin ? 'Welcome Back' : 'Join UMission'))}
           </h1>
           <p className="text-slate-500 text-sm mt-2">
-            {pendingVerification
+            {pendingVerification || pendingReset
               ? `We sent a code to ${email}`
               : (isForgot ? 'Enter your email to receive a reset link' : (isLogin ? 'Access your dashboard' : 'Connect with the campus community'))
             }
@@ -211,6 +211,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
 
         {error && <div className="mb-4 text-red-600 text-xs text-center bg-red-50 p-3 rounded-xl border border-red-100">{error}</div>}
 
+        {/* VERIFICATION FORM */}
         {/* VERIFICATION FORM */}
         {pendingVerification ? (
           <form className="space-y-4" onSubmit={handleVerify}>
@@ -235,6 +236,46 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
               className="w-full text-xs text-slate-400 hover:text-slate-600"
             >
               Back to Sign Up
+            </button>
+          </form>
+        ) : pendingReset ? (
+          /* RESET PASSWORD VERIFICATION FORM */
+          <form className="space-y-4" onSubmit={handleResetVerify}>
+            <div className="space-y-2">
+              <p className="text-sm text-slate-600 text-center mb-4">
+                Enter the code sent to your email and your new password.
+              </p>
+              <input
+                type="text"
+                required
+                className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all text-sm outline-none text-center tracking-widest text-lg font-bold"
+                placeholder="Code (e.g. 123456)"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+              />
+              <input
+                type="password"
+                required
+                className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all text-sm outline-none"
+                placeholder="New Password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-12 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-primary-200 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-70"
+            >
+              {loading ? 'Reseting...' : 'Set New Password'}
+            </button>
+            <button
+              type="button"
+              onClick={() => resetState()}
+              className="w-full text-xs text-slate-400 hover:text-slate-600"
+            >
+              Cancel
             </button>
           </form>
         ) : (
