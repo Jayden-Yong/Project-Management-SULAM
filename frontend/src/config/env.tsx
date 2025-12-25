@@ -4,6 +4,8 @@ interface EnvConfig {
     appVersion: string;
     clerkPublishableKey: string;
     environment: string;
+    supabaseUrl: string;
+    supabaseAnonKey: string; 
 }
 
 // env parsers
@@ -48,6 +50,8 @@ export const env: EnvConfig = {
     appVersion: getEnvVar('VITE_APP_VERSION', '1.0.0'),
     clerkPublishableKey: getEnvVar('VITE_CLERK_PUBLISHABLE_KEY', ''),
     environment: getEnvVar('MODE', 'development'),
+    supabaseUrl: getEnvVar('VITE_SUPABASE_URL', ''),
+    supabaseAnonKey: getEnvVar('VITE_SUPABASE_ANON_KEY', '')
 }
 
 export const {
