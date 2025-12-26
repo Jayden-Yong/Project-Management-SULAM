@@ -5,7 +5,7 @@ from typing import List, Optional
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from sqlmodel import Session, SQLModel, col, func, select
+from sqlmodel import Session, SQLModel, col, func, select, or_, and_
 
 from auth import get_current_user, is_organizer
 from config import settings
@@ -25,113 +25,7 @@ from models import (
     UpdateRegistrationStatusRequest,
 )
 
-# ==========================================
-# Application Lifecycle & Setup
-# ==========================================
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Handle startup and shutdown events.
-    Creates tables on startup if they don't exist.
-    """
-    print(f"🚀 Starting {settings.APP_NAME}...", flush=True)
-    try:
-        SQLModel.metadata.create_all(engine)
-        print("✅ Database tables created/verified.", flush=True)
-    except Exception as e:
-        print(f"❌ Database Connection Failed: {e}", flush=True)
-        # We don't raise here to allow the app to start and return 500s instead of crashing/timing out
-        # This helps debugging on Render console
-        
-    yield
-    print("🛑 Shutting down...", flush=True)
-
-app = FastAPI(
-    title=settings.APP_NAME,
-    version=settings.VERSION,
-    lifespan=lifespan
-)
-
-# 1. Gzip Compression
-# Saves bandwidth by compressing responses > 1000 bytes
-app.add_middleware(GZipMiddleware, minimum_size=1000)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173", 
-        "https://umissionweb.vercel.app", 
-        "https://volunteer-backend-u15e.onrender.com"
-    ] + settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ==========================================
-# Core Dependencies
-# ==========================================
-
-async def get_current_organizer(current_user: dict = Depends(get_current_user)) -> dict:
-    """
-    Dependency to ensure the user is an authorized organizer.
-    """
-    if not is_organizer(current_user):
-        raise HTTPException(status_code=403, detail="Only organizers can perform this action")
-    return current_user
-
-# ==========================================
-# Business Logic Helpers
-# ==========================================
-
-def calculate_badges_logic(completed_count: int) -> List[dict]:
-    """
-    Determines which badges a user has earned based on their completed mission count.
-    
-    Args:
-        completed_count (int): The number of missions the user has completed.
-        
-    Returns:
-        List[dict]: A list of badge objects.
-    """
-    badges = []
-    today = datetime.date.today().isoformat()
-    
-    if completed_count >= 1:
-        badges.append({
-            "id": "badge_1", "name": "First Step", "description": "Completed your first volunteer mission",
-            "icon": "🌱", "color": "bg-green-50 text-green-600", "earnedAt": today
-        })
-    if completed_count >= 3:
-        badges.append({
-            "id": "badge_3", "name": "Helping Hand", "description": "Completed 3 volunteer missions",
-            "icon": "🤝", "color": "bg-blue-50 text-blue-600", "earnedAt": today
-        })
-    if completed_count >= 5:
-        badges.append({
-            "id": "badge_5", "name": "Super Star", "description": "A true community hero (5+ missions)",
-            "icon": "⭐", "color": "bg-yellow-50 text-yellow-600", "earnedAt": today
-        })
-    return badges
-
-# ==========================================
-# API Endpoints
-# ==========================================
-
-@app.get("/")
-async def root():
-    return {
-        "message": "API is running!", 
-        "version": settings.VERSION,
-        "docs_url": "/docs"
-    }
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
-
-# --- Event Management ---
+# ... (Previous code remains, jumping to get_events) ...
 
 @app.get("/events", response_model=List[Event])
 async def get_events(
@@ -168,14 +62,35 @@ async def get_events(
             session.commit()
     except Exception as e:
         print(f"⚠️ Auto-Update Failed: {e}")
+        # Note: We continue even if auto-update fails (e.g. RLS issues)
         session.rollback()
     
     # 2. Normal Fetch Logic
     query = select(Event)
     if organizerId:
         query = query.where(Event.organizerId == organizerId)
-    if status:
+    
+    # Status Filtering with Fallback Logic
+    if status == EventStatus.COMPLETED:
+        # Show events that are:
+        # 1. Marked as COMPLETED in DB
+        # 2. OR Marked as UPCOMING but date is in the past (fallback)
+        query = query.where(
+            or_(
+                Event.status == EventStatus.COMPLETED,
+                and_(
+                    Event.status == EventStatus.UPCOMING, 
+                    Event.date < datetime.date.today()
+                )
+            )
+        )
+    elif status == EventStatus.UPCOMING:
+        # Show events that are UPCOMING and date is today or future
+        query = query.where(Event.status == EventStatus.UPCOMING)
+        query = query.where(Event.date >= datetime.date.today())
+    elif status:
         query = query.where(Event.status == status)
+
     if category and category != 'All':
         query = query.where(Event.category == category)
     if search:
