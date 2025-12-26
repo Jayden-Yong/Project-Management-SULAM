@@ -192,10 +192,10 @@ npm run dev
 
 **Environment Variables Required:**
 ```bash
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_...    # Use pk_live_... for production
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_c291bmQtd2VyZXdvbGYtMjkuY2xlcmsuYWNjb3VudHMuZGV2JA
 VITE_API_URL=https://volunteer-backend-u15e.onrender.com
-VITE_SUPABASE_URL=https://[project-ref].supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...
+VITE_SUPABASE_URL=https://uvduosutcaekynfhyluh.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2ZHVvc3V0Y2Fla3luZmh5bHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzODAyOTUsImV4cCI6MjA4MDk1NjI5NX0.OhXLqDfGFwI4ue8bznoS1yWNRAeozd6owM2LkcV3Xjs
 MODE=production
 ```
 
@@ -210,8 +210,8 @@ MODE=production
 
 **Environment Variables Required:**
 ```bash
-DATABASE_URL=postgresql://postgres.[ref]:[password]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
-CLERK_ISSUER=https://[your-app].clerk.accounts.dev
+DATABASE_URL=postgresql://postgres.uvduosutcaekynfhyluh:2025UMission2025@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres
+CLERK_ISSUER=https://sound-werewolf-29.clerk.accounts.dev
 CORS_ORIGINS=https://umissionweb.vercel.app,http://localhost:5173
 ENVIRONMENT=production
 DEBUG=False
