@@ -268,6 +268,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
               className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all text-sm outline-none text-center tracking-widest text-lg font-bold"
               placeholder="000000"
               value={code}
+              autoComplete="one-time-code"
               onChange={(e) => setCode(e.target.value)}
             />
             <button
@@ -298,6 +299,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                 className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all text-sm outline-none text-center tracking-widest text-lg font-bold"
                 placeholder="000000"
                 value={code}
+                autoComplete="one-time-code"
                 onChange={(e) => setCode(e.target.value)}
               />
             </div>
@@ -329,6 +331,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                 className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all text-sm outline-none text-center tracking-widest text-lg font-bold"
                 placeholder="Code (e.g. 123456)"
                 value={code}
+                autoComplete="one-time-code"
                 onChange={(e) => setCode(e.target.value)}
               />
               <input
@@ -337,6 +340,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                 className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all text-sm outline-none"
                 placeholder="New Password"
                 value={newPassword}
+                autoComplete="new-password"
                 onChange={(e) => setNewPassword(e.target.value)}
               />
             </div>
@@ -366,6 +370,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                 className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all text-sm outline-none"
                 placeholder="Full Name / Club Name"
                 value={name}
+                autoComplete="name"
                 onChange={(e) => setName(e.target.value)}
               />
             )}
@@ -376,6 +381,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
               className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all text-sm outline-none"
               placeholder="Email address"
               value={email}
+              autoComplete="email"
               onChange={(e) => setEmail(e.target.value)}
             />
 
@@ -387,6 +393,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                   className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all text-sm outline-none"
                   placeholder="Password"
                   value={password}
+                  autoComplete={isLogin ? "current-password" : "new-password"}
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 {isLogin && (
