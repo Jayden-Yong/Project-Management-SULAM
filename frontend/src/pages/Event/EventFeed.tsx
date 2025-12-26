@@ -1,10 +1,10 @@
-import React, { useEffect, useState, memo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { getEvents, getUserBookmarks, toggleBookmark, joinEvent } from '../../services/api';
 import { Event } from '../../types';
 import { useUserRole } from '../../hooks/useUserRole';
 
-const LIMIT = 12;
+
 
 // ============================================================================
 // SUB-COMPONENT: EVENT CARD (Memoized for Performance)
@@ -19,7 +19,7 @@ interface EventCardProps {
   onJoin: (e: React.MouseEvent, eventId: string) => void;
 }
 
-const EventCard = memo(({ event, isBookmarked, isOrganizer, statusFilter, onBookmark, onJoin }: EventCardProps) => {
+const EventCard = ({ event, isBookmarked, isOrganizer, statusFilter, onBookmark, onJoin }: EventCardProps) => {
   return (
     <div
       onClick={() => window.location.href = `/events/${event.id}`}
@@ -31,7 +31,6 @@ const EventCard = memo(({ event, isBookmarked, isOrganizer, statusFilter, onBook
           <img
             src={event.imageUrl}
             alt={event.title}
-            loading="lazy"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         ) : (
@@ -118,7 +117,7 @@ const EventCard = memo(({ event, isBookmarked, isOrganizer, statusFilter, onBook
       </div>
     </div>
   );
-});
+};
 
 // ============================================================================
 // COMPONENT: EVENT FEED
@@ -134,8 +133,6 @@ export const EventFeed: React.FC = () => {
 
   // --- State: UI & Loading ---
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
 
   // --- State: Error Handling (Safety Net) ---
   const [error, setError] = useState<string | null>(null);
@@ -158,32 +155,24 @@ export const EventFeed: React.FC = () => {
   // DATA FETCHING
   // ==========================================================================
 
-  const loadEvents = async (isLoadMore = false) => {
-    if (isLoadMore) setLoadingMore(true);
-    else setLoading(true);
+  const loadEvents = async () => {
+    setLoading(true);
 
     try {
-      if (!isLoadMore) setError(null);
-      const skip = isLoadMore ? events.length : 0;
+      setError(null);
 
       // Parallel Fetch: Get events (public) AND bookmarks (user-specific)
       const [newEvents, bookmarksData] = await Promise.all([
-        getEvents(statusFilter, categoryFilter, debouncedSearch, skip, LIMIT),
+        getEvents(statusFilter, categoryFilter, debouncedSearch, 0, 1000), // Fetch ALL (up to 1000)
         // Only fetch bookmarks on initial load if user is logged in
-        (!isLoadMore && user?.id)
+        (user?.id)
           ? getUserBookmarks(user.id).catch(err => { console.warn("Bookmark sync failed", err); return []; })
           : Promise.resolve(null)
       ]);
 
       if (bookmarksData) setUserBookmarks(bookmarksData as string[]);
 
-      if (isLoadMore) {
-        setEvents(prev => [...prev, ...newEvents]);
-      } else {
-        setEvents(newEvents);
-      }
-
-      setHasMore(newEvents.length === LIMIT);
+      setEvents(newEvents);
       setRetryCount(0); // Reset retry logic on success
 
     } catch (e: any) {
@@ -193,19 +182,18 @@ export const EventFeed: React.FC = () => {
       // Automatically retry a few times if the backend is waking up (Render Cold Start)
       if (retryCount < 2) {
         setRetryCount(prev => prev + 1);
-        setTimeout(() => loadEvents(isLoadMore), 3000); // Retry after 3s
+        setTimeout(() => loadEvents(), 3000); // Retry after 3s
       } else {
         setError("The server is taking a moment to wake up. Please wait 30 seconds and refresh.");
       }
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   };
 
   // Trigger fetch when filters change
   useEffect(() => {
-    loadEvents(false);
+    loadEvents();
   }, [statusFilter, categoryFilter, debouncedSearch, user?.id]);
 
   // ==========================================================================
@@ -224,7 +212,7 @@ export const EventFeed: React.FC = () => {
       await toggleBookmark(user.id, eventId);
     } catch (err) {
       alert("Failed to save bookmark");
-      loadEvents(false); // Revert on failure
+      loadEvents(); // Revert on failure
     }
   };
 
@@ -237,7 +225,7 @@ export const EventFeed: React.FC = () => {
       try {
         await joinEvent(eventId, user.id, user.fullName || "Volunteer", user.imageUrl);
         alert("Registration Successful!");
-        loadEvents(false); // Refresh to update counts
+        loadEvents(); // Refresh to update counts
       } catch (err: any) {
         alert(err.response?.data?.detail || "Failed to join event");
       }
@@ -268,7 +256,7 @@ export const EventFeed: React.FC = () => {
             <p className="text-xs opacity-80">{error}</p>
           </div>
           <button
-            onClick={() => loadEvents(false)}
+            onClick={() => loadEvents()}
             className="ml-auto bg-orange-100 px-3 py-1 rounded-lg text-xs font-bold hover:bg-orange-200 transition-colors"
           >
             Retry Now
@@ -346,18 +334,7 @@ export const EventFeed: React.FC = () => {
         </div>
       )}
 
-      {/* --- Load More Button --- */}
-      {hasMore && !loading && events.length > 0 && (
-        <div className="text-center pb-12">
-          <button
-            onClick={() => loadEvents(true)}
-            disabled={loadingMore}
-            className="bg-white border border-slate-200 text-slate-600 px-6 py-3 rounded-xl font-bold text-sm hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm"
-          >
-            {loadingMore ? 'Loading...' : 'Show More Events'}
-          </button>
-        </div>
-      )}
+
     </div>
   );
 };
