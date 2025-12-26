@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
                     if settings.DEBUG: print(f"Keep-awake ping to {url} successful")
                 except Exception as e:
                     print(f"Keep-awake ping to {url} failed: {e}")
-                await asyncio.sleep(300) # 5 minutes (Prevent Render Sleep)
+                await asyncio.sleep(60) # 1 minute (Aggressive Keep-Alive)
 
     # Start background task
     bg_task = asyncio.create_task(ping_self())
