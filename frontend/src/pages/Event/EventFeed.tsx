@@ -123,10 +123,6 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
 
   // 4. Client-side Location Filtering (applied after fetch)
   const displayedEvents = events.filter(e => {
-    // For 'upcoming' events, hide if quota is full. 
-    // For 'completed' events, show them regardless of quota.
-    if (statusFilter === 'upcoming' && e.currentVolunteers >= e.maxVolunteers) return false;
-
     if (locationFilter === 'All') return true;
     const keywords: Record<string, string[]> = {
       'KK': ['KK', 'College', 'Nazrin'],
