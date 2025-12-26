@@ -182,6 +182,73 @@ npm run dev
 
 -----
 
+## 🌐 Deployment
+
+### Production URLs
+- **Frontend (Vercel)**: [https://umissionweb.vercel.app](https://umissionweb.vercel.app)
+- **Backend (Render)**: [https://volunteer-backend-u15e.onrender.com](https://volunteer-backend-u15e.onrender.com)
+
+### Frontend Deployment (Vercel)
+
+**Environment Variables Required:**
+```bash
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_c291bmQtd2VyZXdvbGYtMjkuY2xlcmsuYWNjb3VudHMuZGV2JA
+VITE_API_URL=https://volunteer-backend-u15e.onrender.com
+VITE_SUPABASE_URL=https://uvduosutcaekynfhyluh.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2ZHVvc3V0Y2Fla3luZmh5bHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzODAyOTUsImV4cCI6MjA4MDk1NjI5NX0.OhXLqDfGFwI4ue8bznoS1yWNRAeozd6owM2LkcV3Xjs
+MODE=production
+```
+
+**Steps:**
+1. Connect your GitHub repository to Vercel
+2. Set **Framework Preset** to "Vite"
+3. Set **Root Directory** to `frontend`
+4. Add all environment variables above
+5. Deploy
+
+### Backend Deployment (Render)
+
+**Environment Variables Required:**
+```bash
+DATABASE_URL=postgresql://postgres.uvduosutcaekynfhyluh:2025UMission2025@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres
+CLERK_ISSUER=https://sound-werewolf-29.clerk.accounts.dev
+CORS_ORIGINS=https://umissionweb.vercel.app,http://localhost:5173
+ENVIRONMENT=production
+DEBUG=False
+```
+
+**Important Notes:**
+- ⚠️ **Use Transaction Pooler**: For Render, you MUST use Supabase's **Transaction pooler** (port `6543`) instead of Direct connection (port `5432`) to avoid IPv6 network issues
+- ⚠️ **Match Clerk Environments**: If backend uses `.clerk.accounts.dev` (Development), frontend must use `pk_test_...`. For production, use `.clerk.accounts.com` issuer and `pk_live_...` key
+
+**Steps:**
+1. Create a new **Web Service** on Render
+2. Connect your GitHub repository
+3. Set **Root Directory** to `backend`
+4. Set **Build Command**: `pip install -r requirements.txt`
+5. Set **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+6. Add all environment variables above
+7. Deploy
+
+### Post-Deployment: Database Schema Fix
+
+After first deployment, you MUST run this SQL command in Supabase to fix the date column type:
+
+**Go to Supabase Dashboard → SQL Editor → New Query:**
+```sql
+-- Fix date column type from VARCHAR to DATE
+ALTER TABLE event 
+ALTER COLUMN date TYPE DATE 
+USING date::DATE;
+```
+
+This fixes date comparison issues that cause errors like:
+```
+operator does not exist: character varying < date
+```
+
+-----
+
 ## ❓ Troubleshooting
 
 **1. "Missing VITE\_CLERK\_PUBLISHABLE\_KEY" Error**
@@ -193,17 +260,65 @@ npm run dev
 
   * Check your Supabase Bucket policies. You must enable **Public** access for the `event-banners` bucket or set up proper RLS policies to allow authenticated users to upload.
 
-**3. Database Connection Failed**
+**3. Database Connection Failed (Production)**
 
-  * Verify your `DATABASE_URL` in `backend/.env`.
-  * If using Supabase transaction pooler (port 6543), ensure you are using the correct password.
-  * **Important:** Ensure the connection string starts with `postgresql://` (required by SQLAlchemy/FastAPI), not `postgres://`.
+  * **Error:** `Network is unreachable` or `Connection timed out`
+  * **Cause:** Using Direct connection (port 5432) on Render triggers IPv6 routing issues
+  * **Fix:** Switch to **Transaction pooler** (port 6543):
+    ```
+    postgresql://postgres.[ref]:[password]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
+    ```
+  * Verify your `DATABASE_URL` in `backend/.env` (local) or Render environment variables (production)
+  * **Important:** Ensure the connection string starts with `postgresql://` (required by SQLAlchemy/FastAPI), not `postgres://`
 
-**4. "Not Authorized" on Backend**
+**4. "password authentication failed for user postgres"**
 
-  * Ensure your Clerk Frontend and Backend are using keys from the **same Clerk instance**.
-  * Check that the `CLERK_ISSUER` in `backend/.env` matches the `iss` claim in your JWT.
-  * **Critical:** In Clerk Dashboard → **JWT Templates**, ensure you have a template named `default` that includes `{{user.unsafe_metadata}}` in the claims. The backend relies on this to read the user's role.
+  * Go to **Supabase Dashboard** → **Settings** → **Database** → Reset your database password
+  * Update the `DATABASE_URL` with the new password
+  * **Critical:** If password contains special characters (like `@`, `#`, `/`), they must be URL-encoded:
+    - `@` → `%40`
+    - `#` → `%23`
+    - `/` → `%2F`
+
+**5. CORS Errors / "No 'Access-Control-Allow-Origin' header"**
+
+  * **Frontend (Vercel) can't reach Backend (Render)**
+  * Verify `CORS_ORIGINS` in Render includes your Vercel URL:
+    ```bash
+    CORS_ORIGINS=https://umissionweb.vercel.app,http://localhost:5173
+    ```
+  * **Note:** CORS errors can also appear when the backend is returning 500 errors (check Render logs)
+
+**6. "Not Authorized" / JWT Token Errors**
+
+  * **Error:** `Signature has expired` or `Couldn't find your account`
+  * **Cause:** Mismatch between Clerk Development and Production environments
+  * **Fix:** Ensure Frontend and Backend are using matching Clerk keys:
+    - **Development:** Backend uses `https://[app].clerk.accounts.dev` + Frontend uses `pk_test_...`
+    - **Production:** Backend uses `https://[app].clerk.accounts.com` + Frontend uses `pk_live_...`
+  * Check that the `CLERK_ISSUER` in `backend/.env` matches the `iss` claim in your JWT
+  * **Critical:** In Clerk Dashboard → **JWT Templates**, ensure you have a template named `default` that includes `{{user.unsafe_metadata}}` in the claims. The backend relies on this to read the user's role
+
+**7. Date Comparison Error: "operator does not exist: character varying < date"**
+
+  * **Cause:** The `event.date` column was created as VARCHAR/TEXT instead of DATE type
+  * **Fix:** Run this SQL in Supabase SQL Editor:
+    ```sql
+    ALTER TABLE event 
+    ALTER COLUMN date TYPE DATE 
+    USING date::DATE;
+    ```
+  * This affects the auto-update feature that marks past events as completed
+
+**8. "supabaseUrl is required" Error (Frontend)**
+
+  * **Cause:** Missing Supabase environment variables in Vercel
+  * **Fix:** Add to Vercel environment variables:
+    ```bash
+    VITE_SUPABASE_URL=https://[project-ref].supabase.co
+    VITE_SUPABASE_ANON_KEY=eyJ...  # Your anon public key
+    ```
+  * Redeploy after adding variables
 
 -----
 
