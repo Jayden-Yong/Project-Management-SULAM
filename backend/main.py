@@ -136,7 +136,7 @@ async def get_events(
     elif status == EventStatus.UPCOMING:
         # Show events that are UPCOMING and date is today or future
         query = query.where(Event.status == EventStatus.UPCOMING)
-        query = query.where(Event.date >= datetime.date.today())
+
     elif status:
         query = query.where(Event.status == status)
 
