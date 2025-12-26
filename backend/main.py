@@ -399,7 +399,7 @@ async def get_user_registrations(
         reg_dict = r.model_dump()
         if event:
             reg_dict["eventTitle"] = event.title
-            reg_dict["eventDate"] = event.date.isoformat() if isinstance(event.date, datetime.date) else event.date
+            reg_dict["eventDate"] = event.date.isoformat()
             reg_dict["eventStatus"] = event.status
         reg_dict["hasFeedback"] = has_feedback
         enriched_regs.append(reg_dict)
