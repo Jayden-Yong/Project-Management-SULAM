@@ -20,7 +20,7 @@ export const Navbar: React.FC = () => {
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/');
+    navigate('/login');
     setIsMenuOpen(false);
   };
 
