@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import { getEvents, getUserBookmarks, toggleBookmark, joinEvent } from '../../services/api';
-import { Event } from '../../types';
+import { Event, UserRole } from '../../types';
+import { useUserRole } from '../../hooks/useUserRole';
 
 const LIMIT = 12;
 
@@ -12,6 +13,8 @@ const LIMIT = 12;
 
 export const EventFeed: React.FC = () => {
   const { user, isLoaded } = useUser();
+  // Get role to conditionally render buttons
+  const { role, isOrganizer } = useUserRole();
   const [searchParams] = useSearchParams();
 
   // --- State: Data ---
@@ -115,6 +118,7 @@ export const EventFeed: React.FC = () => {
   const handleJoin = async (e: React.MouseEvent, eventId: string) => {
     e.stopPropagation();
     if (!user) return alert("Please sign in to join");
+    if (isOrganizer) return alert("Organizers cannot join events via this button.");
 
     if (confirm("Confirm your registration for this event?")) {
       try {
@@ -235,13 +239,15 @@ export const EventFeed: React.FC = () => {
                   {event.category}
                 </div>
 
-                {/* Bookmark Button */}
-                <button
-                  onClick={(e) => handleBookmark(e, event.id)}
-                  className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors active:scale-95"
-                >
-                  {userBookmarks.includes(event.id) ? '❤️' : '🤍'}
-                </button>
+                {/* Bookmark Button (Hidden for Organizer) */}
+                {!isOrganizer && (
+                  <button
+                    onClick={(e) => handleBookmark(e, event.id)}
+                    className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors active:scale-95"
+                  >
+                    {userBookmarks.includes(event.id) ? '❤️' : '🤍'}
+                  </button>
+                )}
               </div>
 
               {/* Content */}
@@ -279,14 +285,24 @@ export const EventFeed: React.FC = () => {
                     />
                   </div>
 
-                  {/* Join Button (Only for Upcoming) */}
-                  {statusFilter === 'upcoming' && (
+                  {/* Join Button (Only for Volunteer Role) */}
+                  {statusFilter === 'upcoming' && !isOrganizer && (
                     <button
                       onClick={(e) => handleJoin(e, event.id)}
                       disabled={event.currentVolunteers >= event.maxVolunteers}
                       className="w-full mt-4 py-2.5 rounded-xl text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-slate-200"
                     >
                       {event.currentVolunteers >= event.maxVolunteers ? 'Full Capacity' : 'Join Now'}
+                    </button>
+                  )}
+
+                  {/* Organizer View (View Details Only) */}
+                  {isOrganizer && (
+                    <button
+                      // Card click already handles nav, this is just for visual call-to-action
+                      className="w-full mt-4 py-2.5 rounded-xl text-sm font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      View Details
                     </button>
                   )}
                 </div>
