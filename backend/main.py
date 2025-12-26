@@ -34,6 +34,7 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+
 # --- Middleware ---
 app.add_middleware(
     CORSMiddleware,
@@ -43,6 +44,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "Service is live"}
 
 def calculate_badges_logic(completed_count: int):
     """
