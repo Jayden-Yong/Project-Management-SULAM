@@ -48,7 +48,19 @@ export const EventDetailsModal: React.FC<Props> = ({ isOpen, onClose, event }) =
                         <div className="flex items-center gap-2">
                             <span>📅</span>
                             <span className="font-medium">{event.date}</span>
+                            {event.time && (
+                                <>
+                                    <span className="text-slate-300">•</span>
+                                    <span>🕐 {event.time}</span>
+                                </>
+                            )}
                         </div>
+                        {event.duration && (
+                            <div className="flex items-center gap-2">
+                                <span>⏱️</span>
+                                <span className="font-medium">{event.duration} {event.duration === 1 ? 'hour' : 'hours'}</span>
+                            </div>
+                        )}
                         <div className="flex items-center gap-2">
                             <span>📍</span>
                             <span className="font-medium">{event.location}</span>
@@ -57,6 +69,12 @@ export const EventDetailsModal: React.FC<Props> = ({ isOpen, onClose, event }) =
                             <span>👤</span>
                             <span className="font-medium">Organized by {event.organizerName}</span>
                         </div>
+                        {event.contactPerson && (
+                            <div className="flex items-center gap-2">
+                                <span>📞</span>
+                                <span className="font-medium">{event.contactPerson}</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-6">
@@ -69,6 +87,13 @@ export const EventDetailsModal: React.FC<Props> = ({ isOpen, onClose, event }) =
                             <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
                                 <h3 className="text-xs font-bold text-yellow-800 uppercase tracking-wide mb-2">Volunteer Duties</h3>
                                 <p className="text-sm text-slate-700 whitespace-pre-wrap">{event.tasks}</p>
+                            </div>
+                        )}
+
+                        {event.requirements && (
+                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                                <h3 className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-2">Requirements</h3>
+                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{event.requirements}</p>
                             </div>
                         )}
                     </div>
