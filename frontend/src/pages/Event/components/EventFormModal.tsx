@@ -66,10 +66,59 @@ export const EventFormModal: React.FC<Props> = ({
                                 </select>
                             </div>
                         </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Event Time</label>
+                                <input
+                                    type="time"
+                                    required
+                                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none font-medium"
+                                    value={formData.time || '09:00'}
+                                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Duration (hours)</label>
+                                <input
+                                    type="number"
+                                    required
+                                    min="1"
+                                    max="12"
+                                    placeholder="e.g., 3"
+                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm"
+                                    value={formData.duration || 3}
+                                    onChange={e => setFormData({ ...formData, duration: parseInt(e.target.value) })}
+                                />
+                            </div>
+                        </div>
                         <div><label className="block text-xs font-bold text-slate-700 mb-1">Location / Venue</label><input type="text" required placeholder="e.g., DTC, Tasik Varsiti" className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} /></div>
-                        <div><label className="block text-xs font-bold text-slate-700 mb-1">Max Volunteers</label><input type="number" required className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.maxVolunteers} onChange={e => setFormData({ ...formData, maxVolunteers: parseInt(e.target.value) })} /></div>
+                        <div><label className="block text-xs font-bold text-slate-700 mb-1">Max Volunteers</label><input type="number" required min="1" max="100" placeholder="20" className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.maxVolunteers} onChange={e => setFormData({ ...formData, maxVolunteers: parseInt(e.target.value) })} /></div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">
+                                Contact Person <span className="text-slate-400 font-normal text-[10px]">(Optional)</span>
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="e.g., Ahmad (012-345-6789)"
+                                className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm"
+                                value={formData.contactPerson || ''}
+                                onChange={e => setFormData({ ...formData, contactPerson: e.target.value })}
+                            />
+                        </div>
                         <div><label className="block text-xs font-bold text-slate-700 mb-1">Description</label><textarea required placeholder="What will students be doing?" rows={3} className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })}></textarea></div>
-                        <div><label className="block text-xs font-bold text-slate-700 mb-1">Volunteer Roles & Tasks</label><textarea required placeholder="• Role A (Qty)&#10;• Role B (Qty)" rows={3} className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm font-mono" value={formData.tasks} onChange={e => setFormData({ ...formData, tasks: e.target.value })}></textarea><p className="text-[10px] text-slate-400 mt-1">Be specific so students know what to expect.</p></div>
+                        <div><label className="block text-xs font-bold text-slate-700 mb-1">Volunteer Roles & Tasks</label><textarea required placeholder={"• Registration Assistant (5 pax)\n• Crowd Control (3 pax)\n• Photo Documentation (2 pax)"} rows={4} className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm font-mono" value={formData.tasks} onChange={e => setFormData({ ...formData, tasks: e.target.value })}></textarea><p className="text-[10px] text-slate-400 mt-1">Be specific so students know what to expect.</p></div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">
+                                Requirements <span className="text-slate-400 font-normal text-[10px]">(Optional)</span>
+                            </label>
+                            <textarea
+                                placeholder="e.g., Bring gloves, wear comfortable shoes, no prior experience needed"
+                                rows={2}
+                                className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm"
+                                value={formData.requirements || ''}
+                                onChange={e => setFormData({ ...formData, requirements: e.target.value })}
+                            ></textarea>
+                        </div>
                     </form>
                 </div>
                 <div className="p-5 border-t border-slate-100 bg-white">

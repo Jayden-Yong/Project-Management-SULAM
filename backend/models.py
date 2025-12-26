@@ -46,6 +46,14 @@ class Event(SQLModel, table=True):
     tasks: str = Field(default="")
     
     status: str = Field(default=EventStatus.UPCOMING)
+    
+    # NEW FIELDS: Event timing and requirements
+    # Optional fields with defaults for backward compatibility with existing records
+    time: Optional[str] = Field(default=None)  # Format: "HH:MM" (24-hour)
+    duration: Optional[int] = Field(default=None)  # Duration in hours
+    contactPerson: Optional[str] = Field(default=None)  # Contact info for the event
+    requirements: Optional[str] = Field(default=None)  # Prerequisites or items needed
+
 
 class EventReadWithStats(Event):
     """
