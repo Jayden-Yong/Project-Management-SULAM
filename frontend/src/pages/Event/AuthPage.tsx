@@ -28,6 +28,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
   const [pendingReset, setPendingReset] = useState(false);
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [pending2FA, setPending2FA] = useState(false);
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,6 +47,11 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
     if (!isSignInLoaded || !isSignUpLoaded) return;
 
     try {
+      if (pending2FA) {
+        // handle 2FA verify separately, but just in case
+        return;
+      }
+
       if (isForgot) {
         // --- STEP 1: REQUEST RESET CODE ---
         await signIn?.create({
@@ -67,6 +73,18 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
         if (result.status === "complete") {
           await setActive({ session: result.createdSessionId });
           navigate('/dashboard');
+        } else if (result.status === "needs_second_factor") {
+          // Assume email_code for Client Trust or prepare it
+          // Check if we need to start it
+          const emailCodeFactor = result.supportedSecondFactors?.find((f) => f.strategy === 'email_code');
+          if (emailCodeFactor) {
+            await signIn.prepareSecondFactor({ strategy: 'email_code' });
+            setPending2FA(true);
+          } else {
+            // Fallback or Handle other factors (TOTP etc if implemented later)
+            console.error("No supported email_code second factor:", result);
+            setError("2FA required but email code not available.");
+          }
         } else {
           console.log(result);
           setError("Login incomplete. Check console for details.");
@@ -158,6 +176,34 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
     }
   };
 
+  const handle2FAVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    if (!isSignInLoaded) return;
+
+    try {
+      const result = await signIn.attemptSecondFactor({
+        strategy: "email_code",
+        code,
+      });
+
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
+        navigate('/dashboard');
+      } else {
+        console.error(result);
+        setError("Invalid code. Please try again.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.errors?.[0]?.message || 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const resetState = () => {
     setError('');
     setEmail('');
@@ -167,6 +213,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
     setIsForgot(false);
     setPendingVerification(false);
     setPendingReset(false);
+    setPending2FA(false);
     setCode('');
     setNewPassword('');
   };
@@ -199,10 +246,10 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
           )}
 
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            {pendingVerification ? 'Check your Email' : (isForgot ? 'Reset Password' : (isLogin ? 'Welcome Back' : 'Join UMission'))}
+            {pendingVerification ? 'Check your Email' : (pending2FA ? 'Two-Factor Authentication' : (isForgot ? 'Reset Password' : (isLogin ? 'Welcome Back' : 'Join UMission')))}
           </h1>
           <p className="text-slate-500 text-sm mt-2">
-            {pendingVerification || pendingReset
+            {(pendingVerification || pendingReset || pending2FA)
               ? `We sent a code to ${email}`
               : (isForgot ? 'Enter your email to receive a reset link' : (isLogin ? 'Access your dashboard' : 'Connect with the campus community'))
             }
@@ -236,6 +283,37 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
               className="w-full text-xs text-slate-400 hover:text-slate-600"
             >
               Back to Sign Up
+            </button>
+          </form>
+        ) : pending2FA ? (
+          /* 2FA VERIFICATION FORM */
+          <form className="space-y-4" onSubmit={handle2FAVerify}>
+            <div className="space-y-2">
+              <p className="text-sm text-slate-600 text-center mb-4">
+                Enter the code sent to your email for verification.
+              </p>
+              <input
+                type="text"
+                required
+                className="w-full h-12 px-4 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all text-sm outline-none text-center tracking-widest text-lg font-bold"
+                placeholder="000000"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-12 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-primary-200 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-70"
+            >
+              {loading ? 'Verifying...' : 'Verify Login'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setPending2FA(false); setIsLogin(true); resetState(); }}
+              className="w-full text-xs text-slate-400 hover:text-slate-600"
+            >
+              Back to Login
             </button>
           </form>
         ) : pendingReset ? (
