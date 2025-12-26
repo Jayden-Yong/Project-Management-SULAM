@@ -170,7 +170,9 @@ export const EventFeed: React.FC = () => {
       const [newEvents, bookmarksData] = await Promise.all([
         getEvents(statusFilter, categoryFilter, debouncedSearch, skip, LIMIT),
         // Only fetch bookmarks on initial load if user is logged in
-        (!isLoadMore && user?.id) ? getUserBookmarks(user.id) : Promise.resolve(null)
+        (!isLoadMore && user?.id)
+          ? getUserBookmarks(user.id).catch(err => { console.warn("Bookmark sync failed", err); return []; })
+          : Promise.resolve(null)
       ]);
 
       if (bookmarksData) setUserBookmarks(bookmarksData as string[]);
