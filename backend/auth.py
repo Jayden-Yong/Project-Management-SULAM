@@ -1,5 +1,5 @@
 import httpx
-from fastapi import HTTPException, Security
+from fastapi import Depends, HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 
@@ -83,3 +83,8 @@ def is_organizer(user_payload: dict) -> bool:
               "Check if Clerk JWT Template is named 'default' and includes {{user.unsafe_metadata}}.")
         
     return metadata.get("role") == "organizer"
+
+async def get_current_organizer(current_user: dict = Depends(get_current_user)):
+    if not is_organizer(current_user):
+        raise HTTPException(status_code=403, detail="Not authorized as organizer")
+    return current_user

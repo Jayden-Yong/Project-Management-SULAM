@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { getEvents, getUserBookmarks, joinEvent, toggleBookmark } from '../../services/api';
 import { Event, User, UserRole } from '../../types';
@@ -34,7 +34,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
   const [bookmarkingId, setBookmarkingId] = useState<string | null>(null);
 
   const LIMIT = 6;
-  const initialLoadDone = useRef(false);
+
 
   // 1. Load Events
   const loadEvents = useCallback(async (isLoadMore = false) => {

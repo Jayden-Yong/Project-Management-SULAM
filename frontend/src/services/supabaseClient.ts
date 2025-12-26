@@ -13,7 +13,7 @@ export const setupSupabaseAuth = (tokenGetter: (options?: any) => Promise<string
 /**
  * Custom fetch wrapper to inject the Clerk token.
  */
-const customFetch = async (url: string, options: RequestInit = {}) => {
+const customFetch = async (url: RequestInfo | URL, options: RequestInit = {}) => {
   const headers = new Headers(options.headers);
 
   if (getTokenFn) {

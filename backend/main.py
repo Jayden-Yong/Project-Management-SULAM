@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from sqlmodel import Session, SQLModel, col, func, select, or_, and_
 
-from auth import get_current_user, is_organizer
+from auth import get_current_user, is_organizer, get_current_organizer
 from config import settings
 from database import engine, get_session
 from models import (
@@ -25,7 +25,56 @@ from models import (
     UpdateRegistrationStatusRequest,
 )
 
-# ... (Previous code remains, jumping to get_events) ...
+
+
+app = FastAPI(
+    title="Project Management SULAM API", 
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# --- Middleware ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+def calculate_badges_logic(completed_count: int):
+    """
+    Helper to determine which badges a user has earned based on completed events.
+    """
+    badges = []
+    
+    if completed_count >= 1:
+        badges.append({
+            "id": "starter",
+            "name": "First Step",
+            "icon": "🌱", 
+            "description": "Completed your first event"
+        })
+        
+    if completed_count >= 3:
+        badges.append({
+            "id": "regular", 
+            "name": "Community Regular", 
+            "icon": "⭐",
+            "description": "Completed 3 events"
+        })
+        
+    if completed_count >= 10:
+        badges.append({
+            "id": "expert",
+            "name": "SULAM Expert",
+            "icon": "🏆",
+            "description": "Completed 10 events"
+        })
+        
+    return badges
 
 @app.get("/events", response_model=List[Event])
 async def get_events(

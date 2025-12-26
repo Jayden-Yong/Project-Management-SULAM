@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Event } from '../../../types';
+
 
 interface Props {
     isOpen: boolean;
