@@ -22,7 +22,7 @@ async def _get_jwks():
     jwks_url = f"{settings.CLERK_ISSUER}/.well-known/jwks.json"
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(jwks_url)
+            response = await client.get(jwks_url, timeout=30.0)
             if response.status_code == 200:
                 _jwks_cache = response.json()
                 return _jwks_cache

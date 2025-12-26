@@ -25,9 +25,13 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     
-    # --- SECURITY / CORS ---
-    # Comma-separated list of allowed origins.
-    CORS_ORIGINS: Union[List[str], str] = ["http://localhost:5173", "http://localhost:3000"]
+    # Security: Allowed Origins (Vercel + Local)
+    CORS_ORIGINS: Union[List[str], str] = [
+        "http://localhost:5173", 
+        "http://localhost:3000",
+        "https://umissionweb.vercel.app",
+        "https://umissionweb-git-main-chaziyu.vercel.app"
+    ]
 
     # --- EXTERNAL INFRASTRUCTURE ---
     # Supabase Connection (Transaction Pooler Recommendation: Port 6543)

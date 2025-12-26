@@ -270,7 +270,6 @@ export const EventFeed: React.FC = () => {
 
       {/* --- Filter & Search Bar --- */}
       <div className="sticky top-20 z-30 bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm rounded-2xl p-2 mb-8 flex flex-col md:flex-row gap-2">
-        {/* ... existing filter code ... */}
         {/* Status Toggle */}
         <div className="bg-slate-100 p-1 rounded-xl flex shrink-0">
           {['upcoming', 'completed'].map((status) => (
