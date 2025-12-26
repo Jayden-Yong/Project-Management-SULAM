@@ -157,6 +157,7 @@ export const EventFeed: React.FC = () => {
 
   const loadEvents = async () => {
     setLoading(true);
+    console.log(`[EventFeed] Loading events... Filters: Status=${statusFilter}, Category=${categoryFilter}`);
 
     try {
       setError(null);
@@ -170,13 +171,16 @@ export const EventFeed: React.FC = () => {
           : Promise.resolve(null)
       ]);
 
+      console.log(`[EventFeed] Fetched ${newEvents.length} events.`);
+
       if (bookmarksData) setUserBookmarks(bookmarksData as string[]);
 
       setEvents(newEvents);
       setRetryCount(0); // Reset retry logic on success
 
     } catch (e: any) {
-      console.error("Failed to load feed", e);
+      console.error("[EventFeed] Error:", e);
+      setError(e.message || "Failed to load");
 
       // --- STABILITY SAFETY NET ---
       // Automatically retry a few times if the backend is waking up (Render Cold Start)
@@ -266,7 +270,7 @@ export const EventFeed: React.FC = () => {
 
       {/* --- Filter & Search Bar --- */}
       <div className="sticky top-20 z-30 bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm rounded-2xl p-2 mb-8 flex flex-col md:flex-row gap-2">
-
+        {/* ... existing filter code ... */}
         {/* Status Toggle */}
         <div className="bg-slate-100 p-1 rounded-xl flex shrink-0">
           {['upcoming', 'completed'].map((status) => (
@@ -303,6 +307,16 @@ export const EventFeed: React.FC = () => {
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
+      </div>
+
+      {/* --- DEBUG OVERLAY (Temporary) --- */}
+      <div className="mb-4 p-2 bg-slate-900 text-green-400 text-xs font-mono rounded-lg opacity-80 overflow-auto">
+        <p><strong>Refreshed:</strong> {new Date().toLocaleTimeString()}</p>
+        <p><strong>API Config:</strong> {import.meta.env.VITE_API_URL || 'Localhost (Default)'}</p>
+        <p><strong>Events Loaded:</strong> {events.length}</p>
+        <p><strong>User:</strong> {user ? `${user.fullName} (${user.id})` : 'Guest'}</p>
+        <p><strong>Loading:</strong> {String(loading)}</p>
+        {error && <p className="text-red-400"><strong>Error:</strong> {error}</p>}
       </div>
 
       {/* --- Events Grid --- */}
