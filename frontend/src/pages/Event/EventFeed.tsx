@@ -13,6 +13,8 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // --- Filtering State ---
   // Filters are applied server-side for efficiency where possible
@@ -42,6 +44,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
     else setLoading(true);
 
     try {
+      setError(null);
       const skip = isLoadMore ? events.length : 0;
 
       const [newEvents, bookmarksData] = await Promise.all([
@@ -59,8 +62,17 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
       }
 
       setHasMore(newEvents.length === LIMIT);
-    } catch (e) {
+      setRetryCount(0); // Reset on success
+    } catch (e: any) {
       console.error("Failed to load feed", e);
+
+      // Automatic Retry Logic for Cold Starts
+      if (retryCount < 2) {
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => loadEvents(isLoadMore), 3000); // Wait 3s and retry
+      } else {
+        setError("The server is taking a moment to wake up. Please wait 30 seconds and refresh.");
+      }
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -146,6 +158,23 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Campus Bulletin</h1>
         <p className="text-slate-500 mt-1">Happening around Universiti Malaya</p>
       </div>
+
+      {/* Error Message */}
+      {error && !loading && (
+        <div className="mb-6 p-4 bg-orange-50 border border-orange-100 rounded-2xl flex items-center gap-3 text-orange-700">
+          <span className="text-xl">⏳</span>
+          <div>
+            <p className="text-sm font-bold">Connecting to server...</p>
+            <p className="text-xs opacity-80">{error}</p>
+          </div>
+          <button
+            onClick={() => loadEvents(false)}
+            className="ml-auto bg-orange-100 px-3 py-1 rounded-lg text-xs font-bold hover:bg-orange-200"
+          >
+            Retry Now
+          </button>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="sticky top-16 -mx-4 px-4 py-3 bg-gray-50/95 backdrop-blur-md z-30 border-b border-gray-200/50 mb-6 space-y-3 shadow-sm">
