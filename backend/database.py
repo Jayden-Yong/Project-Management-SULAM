@@ -9,15 +9,16 @@ if not settings.DATABASE_URL:
 # DATABASE ENGINE (SQLAlchemy/SQLModel)
 # =============================================================================
 
-# Optimized for Supabase (specifically for the Free Tier connection limits)
+# Optimized for Supabase Transaction Pooler (Port 6543)
+# We use NullPool because Supabase handles the pooling on their end.
+# Keeping a client-side pool open can cause timeouts/disconnects.
+from sqlalchemy.pool import NullPool
+
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,      # Checks if connection is alive before using it
     echo=settings.DEBUG,     # Logs SQL queries in Dev mode
-    pool_size=5,             # Managed connections (Baseline)
-    max_overflow=5,          # Reduced overflow for stability
-    pool_timeout=30,         # Timeout if connection pool is full
-    pool_recycle=280,        # Reset connections < 5 mins to serve Supabase timeouts
+    poolclass=NullPool,      # Disable SQLAlchemy pooling (Client-side)
     connect_args={
         "keepalives": 1,     # Keeps TCP connection active
     }
