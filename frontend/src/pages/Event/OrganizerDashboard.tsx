@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-
 import {
   createEvent,
   getEventRegistrations,
@@ -16,42 +15,44 @@ import { EventFormModal } from './components/EventFormModal';
 import { ParticipantsModal } from './components/ParticipantsModal';
 import { ReviewsModal } from './components/ReviewsModal';
 
-// ==========================================
-// Types
-// ==========================================
+// ============================================================================
+// TYPES
+// ============================================================================
 
 interface Props {
   user: User;
 }
 
-// ==========================================
-// Component: Organizer Dashboard
-//Map of functionality:
-// 1. Fetch Events (Stats enriched)
-// 2. Add/Edit Events (Modal)
-// 3. Manage Volunteers (Modal)
-// 4. View Reviews (Modal)
-// ==========================================
+// ============================================================================
+// COMPONENT: ORGANIZER DASHBOARD
+// ============================================================================
+// Features:
+// 1. Overview Stats (KPIs)
+// 2. Event Management (CRUD)
+// 3. Volunteer Management (Approvals)
+// 4. Feedback Review
+// ============================================================================
 
 export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
 
-  // --- State: Data & UI ---
+  // --- State: Data ---
   const [events, setEvents] = useState<EventWithStats[]>([]);
+
+  // --- State: UI Control ---
   const [activeTab, setActiveTab] = useState<'upcoming' | 'completed'>('upcoming');
 
   // --- State: Modals ---
-  const [showModal, setShowModal] = useState(false);
+  const [showEventModal, setShowEventModal] = useState(false);
   const [participantModal, setParticipantModal] = useState<{ isOpen: boolean, eventId: string, eventTitle: string } | null>(null);
   const [reviewsModal, setReviewsModal] = useState<{ isOpen: boolean, eventId: string, eventTitle: string } | null>(null);
 
-  // --- State: Modal Data Cache ---
+  // --- State: Modal Data Cache (Lazy Loaded) ---
   const [currentParticipants, setCurrentParticipants] = useState<Registration[]>([]);
   const [currentReviews, setCurrentReviews] = useState<Feedback[]>([]);
 
-  // --- State: Forms ---
+  // --- State: Form Handling ---
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-
   const [formData, setFormData] = useState({
     title: '',
     date: '',
@@ -63,9 +64,9 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
     imageUrl: ''
   });
 
-  // ==========================================
-  // Data Fetching
-  // ==========================================
+  // ==========================================================================
+  // DATA FETCHING
+  // ==========================================================================
 
   const fetchEvents = async () => {
     try {
@@ -79,30 +80,26 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
 
   // Initial Load
   useEffect(() => {
-    fetchEvents();
+    if (user.id) fetchEvents();
   }, [user.id]);
 
-  // Load reviews lazily when modal opens
+  // Lazy Load: Reviews
   useEffect(() => {
     if (reviewsModal?.isOpen) {
-      getFeedbacks(undefined, reviewsModal.eventId)
-        .then(setCurrentReviews)
-        .catch(console.error);
+      getFeedbacks(undefined, reviewsModal.eventId).then(setCurrentReviews).catch(console.error);
     }
   }, [reviewsModal?.isOpen]);
 
-  // Load participants lazily when modal opens
+  // Lazy Load: Participants
   useEffect(() => {
     if (participantModal?.isOpen) {
-      getEventRegistrations(participantModal.eventId)
-        .then(setCurrentParticipants)
-        .catch(console.error);
+      getEventRegistrations(participantModal.eventId).then(setCurrentParticipants).catch(console.error);
     }
   }, [participantModal?.isOpen]);
 
-  // ==========================================
-  // Event Handlers
-  // ==========================================
+  // ==========================================================================
+  // EVENT HANDLERS
+  // ==========================================================================
 
   const handleEditClick = (event: Event) => {
     setEditingEventId(event.id);
@@ -116,11 +113,11 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
       tasks: event.tasks || '',
       imageUrl: event.imageUrl || ''
     });
-    setShowModal(true);
+    setShowEventModal(true);
   };
 
   const handleCloseModal = () => {
-    setShowModal(false);
+    setShowEventModal(false);
     setEditingEventId(null);
     setFormData({
       title: '', date: '', location: '', category: 'Campus Life',
@@ -137,16 +134,10 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('event-banners')
-        .upload(fileName, file);
-
+      const { error: uploadError } = await supabase.storage.from('event-banners').upload(fileName, file);
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
-        .from('event-banners')
-        .getPublicUrl(fileName);
-
+      const { data } = supabase.storage.from('event-banners').getPublicUrl(fileName);
       setFormData({ ...formData, imageUrl: data.publicUrl });
 
     } catch (error: any) {
@@ -163,7 +154,6 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
 
     try {
       const payload = { ...formData, organizerId: user.id, organizerName: user.name };
-
       if (editingEventId) {
         await updateEvent(editingEventId, payload as Event);
       } else {
@@ -191,20 +181,21 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
   const handleParticipantAction = async (registrationId: string, action: 'confirmed' | 'rejected', eventId: string) => {
     try {
       await updateRegistrationStatus(registrationId, action);
+      // Refresh local modal data without closing it
       const participants = await getEventRegistrations(eventId);
       setCurrentParticipants(participants);
-      fetchEvents(); // Update counts
+      fetchEvents(); // Update global stats
     } catch (error: any) {
       alert("Action failed. Please check event capacity.");
     }
   };
 
+  // ==========================================================================
+  // RENDER HELPERS
+  // ==========================================================================
+
   const filteredEvents = events.filter(e => e.status === activeTab);
 
-  // ==========================================
-  // Calculate Statistics
-  // ==========================================
-  
   const stats = {
     totalEvents: events.length,
     activeEvents: events.filter(e => e.status === 'upcoming').length,
@@ -216,10 +207,6 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
     totalReviews: events.reduce((sum, e) => sum + (e.feedbackCount || 0), 0)
   };
 
-  // ==========================================
-  // Render
-  // ==========================================
-
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 pb-24">
       {/* Header */}
@@ -229,51 +216,28 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
           <p className="text-slate-500 text-sm">Welcome back, {user.name}</p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => setShowEventModal(true)}
           className="bg-primary-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-primary-700 shadow-lg shadow-primary-200 transition-transform hover:-translate-y-0.5"
         >
           + New Event
         </button>
       </div>
 
-      {/* Statistics Section */}
+      {/* KPI Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-primary-50 to-primary-100 p-4 rounded-xl border border-primary-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-2xl font-bold text-primary-900 mb-1">{stats.totalEvents}</div>
-          <div className="text-xs font-bold text-primary-700 uppercase tracking-wider">Total Events</div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-primary-50 to-primary-100 p-4 rounded-xl border border-primary-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-2xl font-bold text-primary-900 mb-1">{stats.activeEvents}</div>
-          <div className="text-xs font-bold text-primary-700 uppercase tracking-wider">Active Events</div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-primary-50 to-primary-100 p-4 rounded-xl border border-primary-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-2xl font-bold text-primary-900 mb-1">{stats.completedEvents}</div>
-          <div className="text-xs font-bold text-primary-700 uppercase tracking-wider">Completed</div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-primary-50 to-primary-100 p-4 rounded-xl border border-primary-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-2xl font-bold text-primary-900 mb-1">{stats.totalVolunteers}</div>
-          <div className="text-xs font-bold text-primary-700 uppercase tracking-wider">Total Volunteers</div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-primary-50 to-primary-100 p-4 rounded-xl border border-primary-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-2xl font-bold text-primary-900 mb-1">{stats.avgRating} ★</div>
-          <div className="text-xs font-bold text-primary-700 uppercase tracking-wider">Avg Rating</div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-primary-50 to-primary-100 p-4 rounded-xl border border-primary-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-2xl font-bold text-primary-900 mb-1">{stats.totalReviews}</div>
-          <div className="text-xs font-bold text-primary-700 uppercase tracking-wider">Total Reviews</div>
-        </div>
+        <StatsCard label="Total Events" value={stats.totalEvents} />
+        <StatsCard label="Active Events" value={stats.activeEvents} />
+        <StatsCard label="Completed" value={stats.completedEvents} />
+        <StatsCard label="Total Volunteers" value={stats.totalVolunteers} />
+        <StatsCard label="Avg Rating" value={`${stats.avgRating} ★`} />
+        <StatsCard label="Total Reviews" value={stats.totalReviews} />
       </div>
 
       {/* Activity Heatmap */}
       <ActivityHeatmap events={events} />
 
       {/* Tabs */}
-      <div className="flex space-x-1 bg-slate-100 p-1.5 rounded-xl mb-6 w-fit">
+      <div className="flex space-x-1 bg-slate-100 p-1.5 rounded-xl mb-6 w-fit mt-8">
         {['upcoming', 'completed'].map((tab) => (
           <button
             key={tab}
@@ -285,7 +249,7 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
         ))}
       </div>
 
-      {/* Content Grid */}
+      {/* Events List */}
       {filteredEvents.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
           <p className="text-slate-400 text-sm font-medium">No events found in this category.</p>
@@ -295,13 +259,14 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
           {filteredEvents.map((event) => (
             <div key={event.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row gap-6">
 
-              {/* Event Image (Thumbnail) */}
+              {/* Thumbnail */}
               {event.imageUrl && (
                 <div className="w-full lg:w-48 h-32 lg:h-auto rounded-xl overflow-hidden mb-4 lg:mb-0 lg:mr-6 flex-shrink-0 border border-slate-100 relative">
                   <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
                 </div>
               )}
 
+              {/* Content */}
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[10px] font-bold text-primary-700 bg-primary-50 px-2 py-1 rounded-md uppercase tracking-wider">{event.category}</span>
@@ -310,7 +275,7 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
                 <h3 className="text-lg font-bold text-slate-900 mb-1">{event.title}</h3>
                 <p className="text-sm text-slate-500 flex items-center gap-1">📍 {event.location}</p>
 
-                {/* Review Stats (History Only) */}
+                {/* Statistics (History View) */}
                 {activeTab === 'completed' && (
                   <button
                     onClick={() => setReviewsModal({ isOpen: true, eventId: event.id, eventTitle: event.title })}
@@ -328,10 +293,10 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
                 )}
               </div>
 
-              {/* Action Sidebar */}
+              {/* Actions & KPI (Right Side) */}
               <div className="flex flex-row lg:flex-col items-center lg:items-end gap-4 border-t lg:border-t-0 border-slate-100 pt-4 lg:pt-0 justify-between lg:justify-center">
 
-                {/* Volunteer Count */}
+                {/* Volunteer Counter */}
                 <div className="flex items-center gap-6 bg-slate-50 px-5 py-3 rounded-xl">
                   <div className="text-center lg:text-right">
                     <div className="text-2xl font-bold text-slate-900 leading-none">{event.currentVolunteers}</div>
@@ -339,7 +304,7 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
                   </div>
                 </div>
 
-                {/* Buttons */}
+                {/* Management Buttons (Upcoming Only) */}
                 {activeTab === 'upcoming' && (
                   <div className="flex flex-col gap-2 w-full lg:w-auto">
                     <button
@@ -369,9 +334,8 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
       )}
 
       {/* --- Modals --- */}
-
       <EventFormModal
-        isOpen={showModal}
+        isOpen={showEventModal}
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
         formData={formData}
@@ -396,7 +360,14 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
         reviews={currentReviews}
         eventTitle={reviewsModal?.eventTitle || ''}
       />
-
     </div>
   );
 };
+
+// Sub-component for clean rendering
+const StatsCard = ({ label, value }: { label: string, value: string | number }) => (
+  <div className="bg-gradient-to-br from-primary-50 to-primary-100 p-4 rounded-xl border border-primary-200 shadow-sm hover:shadow-md transition-shadow">
+    <div className="text-2xl font-bold text-primary-900 mb-1">{value}</div>
+    <div className="text-xs font-bold text-primary-700 uppercase tracking-wider">{label}</div>
+  </div>
+);

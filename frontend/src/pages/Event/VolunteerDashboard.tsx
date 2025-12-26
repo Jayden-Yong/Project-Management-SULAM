@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-
 import {
   getBookmarkedEventsDetail,
   getFeedbacks,
@@ -20,10 +19,15 @@ interface Props {
   user: User;
 }
 
-// ==========================================
-// Component: Volunteer Dashboard
-// Displays user activity, points, and allows feedback submission.
-// ==========================================
+// ============================================================================
+// COMPONENT: VOLUNTEER DASHBOARD
+// ============================================================================
+// Features:
+// 1. Personal Stats (Points, Hours)
+// 2. Badges & Gamification
+// 3. Schedule Management (My Events)
+// 4. Feedback Submission
+// ============================================================================
 
 export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
 
@@ -32,28 +36,26 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
   const [badges, setBadges] = useState<Badge[]>([]);
   const [bookmarkedEvents, setBookmarkedEvents] = useState<Event[]>([]);
 
-  // --- State: UI ---
+  // --- State: UI Control ---
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'schedule' | 'pending' | 'history' | 'saved'>('schedule');
 
-  // --- State: Feedback Modal ---
+  // --- State: Modals ---
   const [feedbackModal, setFeedbackModal] = useState<{ isOpen: boolean, eventId: string, eventTitle: string, feedbackId?: string | null } | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [viewEvent, setViewEvent] = useState<Event | null>(null);
+
+  // --- State: Feedback Form ---
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
 
-  // --- State: Details Modal ---
-  const [viewEvent, setViewEvent] = useState<Event | null>(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-
-
-
-  // ==========================================
-  // Data Fetching
-  // ==========================================
+  // ==========================================================================
+  // DATA FETCHING
+  // ==========================================================================
 
   const loadData = async () => {
     try {
-      // Fetch all dashboard data in parallel for speed
+      // Fetch all dashboard data concurrently
       const [regsData, badgesData, savedEvents] = await Promise.all([
         getUserRegistrations(user.id),
         getUserBadges(user.id),
@@ -71,34 +73,37 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
   };
 
   useEffect(() => {
-    loadData();
+    if (user.id) loadData();
   }, [user.id]);
 
-  // ==========================================
-  // Interaction Handlers
-  // ==========================================
+  // ==========================================================================
+  // EVENT HANDLERS
+  // ==========================================================================
 
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!feedbackModal) return;
 
-    const feedbackId = feedbackModal.feedbackId;
+    try {
+      if (feedbackModal.feedbackId) {
+        await updateFeedback(feedbackModal.feedbackId, { rating, comment });
+      } else {
+        await submitFeedback({
+          eventId: feedbackModal.eventId,
+          userId: user.id,
+          rating,
+          comment
+        });
+      }
 
-    if (feedbackId) {
-      await updateFeedback(feedbackId, { rating, comment });
-    } else {
-      await submitFeedback({
-        eventId: feedbackModal.eventId,
-        userId: user.id,
-        rating,
-        comment
-      });
+      setFeedbackModal(null);
+      setRating(5);
+      setComment('');
+      loadData(); // Refresh to update "Rated" status and points
+      alert("Feedback submitted directly!");
+    } catch (e) {
+      alert("Failed to submit feedback");
     }
-
-    setFeedbackModal(null);
-    setRating(5);
-    setComment('');
-    loadData(); // Refresh to update "Rated" status and points
   };
 
   const openFeedbackModal = (eventId: string, title: string, feedbackId?: string) => {
@@ -108,23 +113,8 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
       eventTitle: title,
       feedbackId
     });
-    // Logic for pre-filling fetch is now handled in the List component to pass the ID, 
-    // BUT we need the specific Rating/Comment to fill the form state.
-    // In this refactor, let's just make sure when the modal opens, if feedbackId is present, we might need to re-fetch or pass data.
-    // Optimization: The List component fetches it. We should probably pass the data UP or refetch here. 
-    // For simplicity in this step: List handles fetch, but we need to put it into state.
 
-    // Note: The List component implementation I wrote in `VolunteerEventList.tsx` calls `onOpenFeedback` AFTER fetching.
-    // But wait, `VolunteerEventList` fetches data inside `handleEditClick`. It doesn't pass the data up.
-    // I need to adjust `VolunteerEventList` to pass the `rating` and `comment` too, or fetch it here.
-    // Correcting: Let's fetch it here for simplicity securely.
-    // Actually, looking at my `VolunteerEventList` implementation, it passed `feedbackId`. 
-    // I should have passed the whole feedback object. 
-    // Let's assume for now the user clicks, `List` fetches, verifies existence, and passes `id`.
-    // We still need to load the content into `rating` / `comment`.
-
-    // QUICK FIX: Since I can't easily change the `List` component I just wrote without another tool call, 
-    // I will add a `fetchFeedbackDetails` here if `feedbackId` is provided.
+    // If editing existing feedback, try to pre-fill (Best effort)
     if (feedbackId) {
       getFeedbacks(user.id, eventId).then(feedbacks => {
         if (feedbacks.length > 0) {
@@ -140,7 +130,7 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
 
   const handleViewDetails = async (eventId: string) => {
     try {
-      // Check if it's a bookmarked event -> we already have the full object
+      // Check if it's a bookmarked event -> we already have the full object locally
       const bookmarked = bookmarkedEvents.find(e => e.id === eventId);
       if (bookmarked) {
         setViewEvent(bookmarked);
@@ -148,7 +138,7 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
         return;
       }
 
-      // Otherwise fetch fresh
+      // Otherwise fetch fresh from API
       const eventData = await getEvent(eventId);
       setViewEvent(eventData);
       setShowDetailsModal(true);
@@ -158,38 +148,36 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
     }
   };
 
-
-  // ==========================================
-  // Helper Logic
-  // ==========================================
+  // ==========================================================================
+  // RENDER HELPERS
+  // ==========================================================================
 
   const scheduledEvents = registrations.filter(r => r.eventStatus === 'upcoming' && r.status === 'confirmed');
   const pendingEvents = registrations.filter(r => r.eventStatus === 'upcoming' && r.status === 'pending');
   const pastEvents = registrations.filter(r => r.eventStatus === 'completed' && r.status === 'confirmed');
-  const totalPoints = pastEvents.length * 5;
-
-  // ==========================================
-  // Render
-  // ==========================================
+  const totalPoints = pastEvents.length * 5; // Simple point logic: 5pts per event
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 pb-24">
 
+      {/* Stats Overview */}
       <VolunteerStatsCard
         user={user}
         totalPoints={totalPoints}
         completedCount={pastEvents.length}
       />
 
+      {/* Gamification */}
       <VolunteerBadges badges={badges} />
 
+      {/* Navigation Tabs */}
       <VolunteerTabs
         activeTab={activeTab}
         onChange={setActiveTab}
         pendingCount={pendingEvents.length}
       />
 
-      {/* Content Area */}
+      {/* Main List Content */}
       <VolunteerEventList
         loading={loading}
         activeTab={activeTab}
@@ -198,21 +186,22 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
         pastEvents={pastEvents}
         bookmarkedEvents={bookmarkedEvents}
         onOpenFeedback={openFeedbackModal}
-        onViewEvent={handleViewDetails} // Passed handler
+        onViewEvent={handleViewDetails}
         user={user}
       />
 
+      {/* Event Detail Modal */}
       <EventDetailsModal
         isOpen={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}
         event={viewEvent}
       />
 
-      {/* Responsive Feedback Modal */}
+      {/* Feedback Modal */}
       {feedbackModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fade-in">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setFeedbackModal(null)}></div>
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-md p-6 animate-slide-up sm:animate-fade-in-up relative z-10">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-md p-6 relative z-10 sm:animate-scale-in">
             <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6 sm:hidden"></div>
 
             <div className="text-center mb-6">

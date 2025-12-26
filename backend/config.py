@@ -5,8 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     """
-    Application Configuration.
-    Reads variables from system environment or a .env file.
+    Application Configuration Management.
+    Loads variables from environment or .env file.
     """
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -15,37 +15,39 @@ class Settings(BaseSettings):
         extra="allow"
     )
 
-    # --- App Info ---
-    APP_NAME: str = "Volunteerism App Backend"
-    VERSION: str = "1.0.0"
+    # --- CORE APP INFO ---
+    APP_NAME: str = "SULAM Volunteerism API"
+    VERSION: str = "1.1.0"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
 
-    # --- Server ---
+    # --- NETWORK / SERVER ---
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     
-    # --- CORS (Allow Frontend Access) ---
-    # Default includes standard local ports. 
-    # For Vercel, add your URL to the .env file: CORS_ORIGINS=https://your-app.vercel.app
+    # --- SECURITY / CORS ---
+    # Comma-separated list of allowed origins.
     CORS_ORIGINS: Union[List[str], str] = ["http://localhost:5173", "http://localhost:3000"]
 
-    # --- Infrastructure ---
+    # --- EXTERNAL INFRASTRUCTURE ---
+    # Supabase Connection (Transaction Pooler Recommendation: Port 6543)
     DATABASE_URL: Optional[str] = None
+    
+    # Clerk Auth (Issuer URL from Clerk Dashboard)
     CLERK_ISSUER: Optional[str] = None
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        """Parsed comma-separated CORS string into a list."""
         if isinstance(v, str):
-            # FIX: Robust parsing handles spaces after commas
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
 
     @field_validator("CLERK_ISSUER", mode="before")
     @classmethod
     def clean_issuer_url(cls, v: Optional[str]) -> Optional[str]:
-        """Automatically remove trailing slashes to prevent JWKS errors"""
+        """Ensures the issuer URL has no trailing slash (prevents JWKS fetch errors)."""
         if v and isinstance(v, str):
             return v.rstrip("/")
         return v
@@ -53,7 +55,7 @@ class Settings(BaseSettings):
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def fix_postgres_protocol(cls, v: Optional[str]) -> Optional[str]:
-        """Fixes Supabase 'postgres://' schema for SQLAlchemy"""
+        """Ensures SQLAlchemy compatibility by forcing 'postgresql://' protocol."""
         if v and v.startswith("postgres://"):
             return v.replace("postgres://", "postgresql://", 1)
         return v

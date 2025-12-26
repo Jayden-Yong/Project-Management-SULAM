@@ -1,6 +1,6 @@
 import { SignedIn, SignedOut, useUser } from '@clerk/clerk-react';
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { Navbar } from '../components/Navbar';
 import { PageLoader } from '../components/PageLoader';
@@ -43,16 +43,6 @@ const DashboardWithUser = () => {
         : <VolunteerDashboard user={user} />;
 }
 
-// Wrapper for Feed Access
-const FeedWithUser = () => {
-    const user = useAppUser();
-    const navigate = useNavigate();
-
-    // We allow user to be null (loading) but render Feed anyway so they see skeleton loaders
-    // If not logged in, user is null, handled by EventFeed logic
-    return <EventFeed user={user} onNavigate={(path) => navigate(`/${path}`)} />;
-}
-
 /**
  * Main Routing Configuration.
  * Defines all application routes and access control (Auth/Role guards).
@@ -67,12 +57,7 @@ export default function AppRoutes() {
                         <Route path="/" element={<Navigate to="/feed" replace />} />
 
                         {/* Public Feed (but requires SignIn for actions) */}
-                        <Route path="/feed" element={
-                            <>
-                                <SignedIn><FeedWithUser /></SignedIn>
-                                <SignedOut><Navigate to="/login" replace /></SignedOut>
-                            </>
-                        } />
+                        <Route path="/feed" element={<EventFeed />} />
 
                         {/* Auth Routes */}
                         <Route path="/login" element={<AuthPage />} />

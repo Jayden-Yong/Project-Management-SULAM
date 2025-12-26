@@ -3,18 +3,14 @@
  * Aligns with Backend Models (where applicable) and Frontend Interfaces.
  */
 
-// ==========================================
-// Enums & Constants
-// ==========================================
+// ============================================================================
+// DOMAIN: USERS & AUTH
+// ============================================================================
 
 export enum UserRole {
   VOLUNTEER = 'volunteer',
   ORGANIZER = 'organizer'
 }
-
-// ==========================================
-// User Domain
-// ==========================================
 
 export interface User {
   id: string;
@@ -34,37 +30,38 @@ export interface Badge {
   earnedAt: string;
 }
 
-// ==========================================
-// Event Domain
-// ==========================================
+// ============================================================================
+// DOMAIN: EVENTS
+// ============================================================================
 
 export interface Event {
   id: string;
   title: string;
-  date: string;
+  date: string;       // ISO Date YYYY-MM-DD
   location: string;
   category: string;
   maxVolunteers: number;
   currentVolunteers: number;
   description: string;
-  imageUrl?: string;
-  tasks?: string;
+  imageUrl?: string;  // Cloud storage URL
+  tasks?: string;     // Newline separated list
   status: 'upcoming' | 'completed';
 
-  // Organizer Info
+  // Organizer Info (flattened for convenience)
   organizerId: string;
   organizerName: string;
 }
 
 export interface EventWithStats extends Event {
-  // Aggregated stats from backend (avg rating, count)
+  /** Aggregated star rating (1.0 - 5.0) from backend */
   avgRating: number;
+  /** Total number of feedback submitted */
   feedbackCount: number;
 }
 
-// ==========================================
-// Interaction Domain (Registrations, Feedback)
-// ==========================================
+// ============================================================================
+// DOMAIN: INTERACTION (Join, Reviews)
+// ============================================================================
 
 export interface Registration {
   id: string;
@@ -73,7 +70,7 @@ export interface Registration {
   status: 'pending' | 'confirmed' | 'rejected';
   joinedAt: string;
 
-  // Flattened event details (Joined from backend)
+  // Flattened event details (Enriched by backend)
   eventTitle?: string;
   eventDate?: string;
   eventStatus?: string;
@@ -90,6 +87,6 @@ export interface Feedback {
   id: string;
   eventId: string;
   userId: string;
-  rating: number;
+  rating: number; // 1-5
   comment: string;
 }

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Event, Registration, Badge, Feedback, EventWithStats } from '../types';
 
 // ============================================================================
-// API Client Configuration
+// API CLIENT CONFIGURATION
 // ============================================================================
 
 const api = axios.create({
@@ -24,6 +24,7 @@ export const setupAxiosInterceptors = (tokenGetter: () => Promise<string | null>
   getTokenFn = tokenGetter;
 };
 
+// Request Interceptor: Injects Auth Token
 api.interceptors.request.use(async (config) => {
   if (getTokenFn) {
     try {
@@ -39,7 +40,7 @@ api.interceptors.request.use(async (config) => {
 }, (error) => Promise.reject(error));
 
 // ============================================================================
-// Event Management (Organizer & Public Feed)
+// EVENT MANAGEMENT (Public & Organizer)
 // ============================================================================
 
 /**
@@ -64,17 +65,13 @@ export const getEvents = async (
   return data;
 };
 
-/**
- * Fetch a single event by ID.
- */
+/** Fetch a single event by ID. */
 export const getEvent = async (eventId: string): Promise<Event> => {
   const { data } = await api.get(`/events/${eventId}`);
   return data;
 };
 
-/**
- * Fetch events specifically managed by a given organizer.
- */
+/** Fetch events specifically managed by a given organizer. */
 export const getOrganizerEvents = async (organizerId: string): Promise<Event[]> => {
   const { data } = await api.get(`/events?organizerId=${organizerId}`);
   return data;
@@ -89,47 +86,47 @@ export const getOrganizerStats = async (): Promise<EventWithStats[]> => {
   return data;
 };
 
-/**
- * Create a new event.
- * Requires organizer permissions.
- */
+/** Create a new event. Requires organizer permissions. */
 export const createEvent = async (eventData: Partial<Event>): Promise<Event> => {
   const { data } = await api.post('/events', eventData);
   return data;
 };
 
+/** Update event details. */
 export const updateEvent = async (eventId: string, eventData: Partial<Event>): Promise<Event> => {
   const { data } = await api.put(`/events/${eventId}`, eventData);
   return data;
 };
 
+/** Update event status (e.g. Conclude event). */
 export const updateEventStatus = async (eventId: string, status: 'upcoming' | 'completed'): Promise<Event> => {
   const { data } = await api.patch(`/events/${eventId}`, { status });
   return data;
 };
 
 // ============================================================================
-// Volunteer Operations (Join, Bookmarks, Badges)
+// VOLUNTEER OPERATIONS (Join, Bookmarks)
 // ============================================================================
 
-/**
- * Register the current user for an event.
- */
+/** Register the current user for an event. */
 export const joinEvent = async (eventId: string, userId: string, userName: string, userAvatar: string): Promise<Registration> => {
   const { data } = await api.post(`/events/${eventId}/join`, { userId, userName, userAvatar });
   return data;
 };
 
+/** Get participants for an event (Organizer Only). */
 export const getEventRegistrations = async (eventId: string): Promise<Registration[]> => {
   const { data } = await api.get(`/events/${eventId}/registrations`);
   return data;
 };
 
+/** Approve or Reject a volunteer. */
 export const updateRegistrationStatus = async (registrationId: string, status: 'confirmed' | 'rejected'): Promise<Registration> => {
   const { data } = await api.patch(`/registrations/${registrationId}`, { status });
   return data;
 };
 
+/** Get all activities a user has joined. */
 export const getUserRegistrations = async (userId: string): Promise<Registration[]> => {
   const { data } = await api.get(`/users/${userId}/registrations`);
   return data;
@@ -147,23 +144,20 @@ export const toggleBookmark = async (userId: string, eventId: string): Promise<s
   return data;
 };
 
-/**
- * Fetch full event details for all bookmarked items (Optimized batch fetch).
- */
+/** Fetch full event details for all bookmarked items (Optimized batch fetch). */
 export const getBookmarkedEventsDetail = async (): Promise<Event[]> => {
   const { data } = await api.get('/users/me/bookmarks/events');
   return data;
 };
 
-// --- Badges ---
-
+/** Get earned badges based on completion count. */
 export const getUserBadges = async (userId: string): Promise<Badge[]> => {
   const { data } = await api.get(`/users/${userId}/badges`);
   return data;
 };
 
 // ============================================================================
-// Feedback System
+// FEEDBACK & RATINGS
 // ============================================================================
 
 export const getEventAverageRating = async (eventId: string): Promise<number> => {
