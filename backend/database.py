@@ -15,9 +15,9 @@ engine = create_engine(
     pool_pre_ping=True,      # Checks if connection is alive before using it
     echo=settings.DEBUG,     # Logs SQL queries in Dev mode
     pool_size=5,             # Managed connections (Baseline)
-    max_overflow=10,         # Extra connections during high traffic
+    max_overflow=5,          # Reduced overflow for stability
     pool_timeout=30,         # Timeout if connection pool is full
-    pool_recycle=1800,       # Reset connections every 30 mins to avoid stale sessions
+    pool_recycle=280,        # Reset connections < 5 mins to serve Supabase timeouts
     connect_args={
         "keepalives": 1,     # Keeps TCP connection active
     }
