@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { getEvents, getUserBookmarks, toggleBookmark, joinEvent } from '../../services/api';
 import { Event } from '../../types';
@@ -7,12 +7,125 @@ import { useUserRole } from '../../hooks/useUserRole';
 const LIMIT = 12;
 
 // ============================================================================
+// SUB-COMPONENT: EVENT CARD (Memoized for Performance)
+// ============================================================================
+
+interface EventCardProps {
+  event: Event;
+  isBookmarked: boolean;
+  isOrganizer: boolean;
+  statusFilter: 'upcoming' | 'completed';
+  onBookmark: (e: React.MouseEvent, eventId: string) => void;
+  onJoin: (e: React.MouseEvent, eventId: string) => void;
+}
+
+const EventCard = memo(({ event, isBookmarked, isOrganizer, statusFilter, onBookmark, onJoin }: EventCardProps) => {
+  return (
+    <div
+      onClick={() => window.location.href = `/events/${event.id}`}
+      className="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full"
+    >
+      {/* Image Banner */}
+      <div className="relative h-48 bg-slate-200 overflow-hidden">
+        {event.imageUrl ? (
+          <img
+            src={event.imageUrl}
+            alt={event.title}
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
+            <span className="text-4xl">📅</span>
+          </div>
+        )}
+
+        {/* Category Badge */}
+        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-800 shadow-sm">
+          {event.category}
+        </div>
+
+        {/* Bookmark Button (Hidden for Organizer) */}
+        {!isOrganizer && (
+          <button
+            onClick={(e) => onBookmark(e, event.id)}
+            className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors active:scale-95"
+          >
+            {isBookmarked ? '❤️' : '🤍'}
+          </button>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-5 flex-1 flex flex-col">
+        <div className="flex justify-between items-start mb-2">
+          <span className="text-xs font-bold text-primary-600 bg-primary-50 px-2 py-1 rounded-md">
+            {new Date(event.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </span>
+          {event.status === 'completed' && (
+            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md uppercase">Completed</span>
+          )}
+        </div>
+
+        <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2 leading-tight group-hover:text-primary-700 transition-colors">
+          {event.title}
+        </h3>
+
+        <p className="text-sm text-slate-500 mb-4 flex items-center gap-1.5">
+          📍 <span className="truncate">{event.location}</span>
+        </p>
+
+        {/* Footer Analysis: Participation Bar */}
+        <div className="mt-auto pt-4 border-t border-slate-100">
+          <div className="flex justify-between items-center text-xs mb-1.5">
+            <span className="font-bold text-slate-700">{event.currentVolunteers} / {event.maxVolunteers} Volunteers</span>
+            <span className="text-slate-400 font-medium">
+              {Math.round((event.currentVolunteers / event.maxVolunteers) * 100)}%
+            </span>
+          </div>
+          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-1000 ${event.currentVolunteers >= event.maxVolunteers ? 'bg-red-500' : 'bg-primary-500'
+                }`}
+              style={{ width: `${Math.min(100, (event.currentVolunteers / event.maxVolunteers) * 100)}%` }}
+            />
+          </div>
+
+          {/* Join Button (Only for Volunteer Role) */}
+          {statusFilter === 'upcoming' && !isOrganizer && (
+            <button
+              onClick={(e) => onJoin(e, event.id)}
+              disabled={event.currentVolunteers >= event.maxVolunteers}
+              className="w-full mt-4 py-2.5 rounded-xl text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-slate-200"
+            >
+              {event.currentVolunteers >= event.maxVolunteers ? 'Full Capacity' : 'Join Now'}
+            </button>
+          )}
+
+          {/* Organizer View (View Details Only) */}
+          {statusFilter === 'upcoming' && isOrganizer && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                window.location.href = `/events/${event.id}`;
+              }}
+              className="w-full mt-4 py-2.5 rounded-xl text-sm font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+            >
+              View Details
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ============================================================================
 // COMPONENT: EVENT FEED
 // ============================================================================
 
 export const EventFeed: React.FC = () => {
   const { user } = useUser();
-  // Get role to conditionally render buttons
   const { isOrganizer } = useUserRole();
 
   // --- State: Data ---
@@ -218,98 +331,15 @@ export const EventFeed: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
           {events.map((event) => (
-            <div
+            <EventCard
               key={event.id}
-              onClick={() => window.location.href = `/events/${event.id}`}
-              className="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full"
-            >
-              {/* Image Banner */}
-              <div className="relative h-48 bg-slate-200 overflow-hidden">
-                {event.imageUrl ? (
-                  <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
-                    <span className="text-4xl">📅</span>
-                  </div>
-                )}
-
-                {/* Category Badge */}
-                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-800 shadow-sm">
-                  {event.category}
-                </div>
-
-                {/* Bookmark Button (Hidden for Organizer) */}
-                {!isOrganizer && (
-                  <button
-                    onClick={(e) => handleBookmark(e, event.id)}
-                    className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors active:scale-95"
-                  >
-                    {userBookmarks.includes(event.id) ? '❤️' : '🤍'}
-                  </button>
-                )}
-              </div>
-
-              {/* Content */}
-              <div className="p-5 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-xs font-bold text-primary-600 bg-primary-50 px-2 py-1 rounded-md">
-                    {new Date(event.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </span>
-                  {event.status === 'completed' && (
-                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md uppercase">Completed</span>
-                  )}
-                </div>
-
-                <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2 leading-tight group-hover:text-primary-700 transition-colors">
-                  {event.title}
-                </h3>
-
-                <p className="text-sm text-slate-500 mb-4 flex items-center gap-1.5">
-                  📍 <span className="truncate">{event.location}</span>
-                </p>
-
-                {/* Footer Analysis: Participation Bar */}
-                <div className="mt-auto pt-4 border-t border-slate-100">
-                  <div className="flex justify-between items-center text-xs mb-1.5">
-                    <span className="font-bold text-slate-700">{event.currentVolunteers} / {event.maxVolunteers} Volunteers</span>
-                    <span className="text-slate-400 font-medium">
-                      {Math.round((event.currentVolunteers / event.maxVolunteers) * 100)}%
-                    </span>
-                  </div>
-                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-1000 ${event.currentVolunteers >= event.maxVolunteers ? 'bg-red-500' : 'bg-primary-500'
-                        }`}
-                      style={{ width: `${Math.min(100, (event.currentVolunteers / event.maxVolunteers) * 100)}%` }}
-                    />
-                  </div>
-
-                  {/* Join Button (Only for Volunteer Role) */}
-                  {statusFilter === 'upcoming' && !isOrganizer && (
-                    <button
-                      onClick={(e) => handleJoin(e, event.id)}
-                      disabled={event.currentVolunteers >= event.maxVolunteers}
-                      className="w-full mt-4 py-2.5 rounded-xl text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-slate-200"
-                    >
-                      {event.currentVolunteers >= event.maxVolunteers ? 'Full Capacity' : 'Join Now'}
-                    </button>
-                  )}
-
-                  {/* Organizer View (View Details Only) */}
-                  {statusFilter === 'upcoming' && isOrganizer && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.location.href = `/events/${event.id}`;
-                      }}
-                      className="w-full mt-4 py-2.5 rounded-xl text-sm font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
-                    >
-                      View Details
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+              event={event}
+              isBookmarked={userBookmarks.includes(event.id)}
+              isOrganizer={isOrganizer}
+              statusFilter={statusFilter}
+              onBookmark={handleBookmark}
+              onJoin={handleJoin}
+            />
           ))}
         </div>
       )}
