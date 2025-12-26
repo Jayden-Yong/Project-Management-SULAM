@@ -16,6 +16,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
 
   // --- Filtering State ---
   // Filters are applied server-side for efficiency where possible
+  const [statusFilter, setStatusFilter] = useState<'upcoming' | 'completed'>('upcoming');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [locationFilter, setLocationFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,7 +45,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
       const skip = isLoadMore ? events.length : 0;
 
       const [newEvents, bookmarksData] = await Promise.all([
-        getEvents('upcoming', categoryFilter, debouncedSearch, skip, LIMIT),
+        getEvents(statusFilter, categoryFilter, debouncedSearch, skip, LIMIT),
         // Only fetch bookmarks on initial load or if user changed
         (!isLoadMore && user) ? getUserBookmarks(user.id) : Promise.resolve(null)
       ]);
@@ -64,7 +65,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [categoryFilter, debouncedSearch, user, events.length]); // Dependency on events.length is tricky for loadMore, usually handled by ref or passing value directly.
+  }, [statusFilter, categoryFilter, debouncedSearch, user, events.length]);
 
   // 2. Initial & Filter Change Effect
   useEffect(() => {
@@ -72,9 +73,8 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
     setEvents([]);
     setHasMore(true);
     loadEvents(false);
-  }, [categoryFilter, debouncedSearch, user?.id]);
+  }, [statusFilter, categoryFilter, debouncedSearch, user?.id]);
   // Note: user.id added to reload if user logs in/out. 
-  // removed `loadEvents` from dep array to avoid loops, purely relying on filter changes.
 
   // 3. User Actions
   const handleJoin = async (eventId: string) => {
@@ -122,12 +122,11 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
   };
 
   // 4. Client-side Location Filtering (applied after fetch)
-  // Since we fetch paginated data, applying client-side filter might hide all results.
-  // Ideally this should be backend, but for now we filter what we have.
   const displayedEvents = events.filter(e => {
-    // Hide events where quota is full
-    if (e.currentVolunteers >= e.maxVolunteers) return false;
-    
+    // For 'upcoming' events, hide if quota is full. 
+    // For 'completed' events, show them regardless of quota.
+    if (statusFilter === 'upcoming' && e.currentVolunteers >= e.maxVolunteers) return false;
+
     if (locationFilter === 'All') return true;
     const keywords: Record<string, string[]> = {
       'KK': ['KK', 'College', 'Nazrin'],
@@ -154,16 +153,36 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
 
       {/* Filter Bar */}
       <div className="sticky top-16 -mx-4 px-4 py-3 bg-gray-50/95 backdrop-blur-md z-30 border-b border-gray-200/50 mb-6 space-y-3 shadow-sm">
-        {/* Search */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search activities..."
-            className="w-full pl-11 pr-4 h-12 rounded-xl bg-white border-none shadow-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-primary-500 outline-none"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <span className="absolute left-4 top-3.5 text-slate-400">🔍</span>
+
+        {/* Status Toggle & Search Row */}
+        <div className="flex gap-3">
+          {/* Status Segmented Control */}
+          <div className="flex bg-slate-200/50 p-1 rounded-xl shrink-0">
+            <button
+              onClick={() => setStatusFilter('upcoming')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${statusFilter === 'upcoming' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Upcoming
+            </button>
+            <button
+              onClick={() => setStatusFilter('completed')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${statusFilter === 'completed' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Past
+            </button>
+          </div>
+
+          {/* Search */}
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search activities..."
+              className="w-full pl-10 pr-4 h-full rounded-xl bg-white border-none shadow-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-primary-500 outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <span className="absolute left-3 top-3 text-slate-400">🔍</span>
+          </div>
         </div>
 
         {/* Chips */}
@@ -219,6 +238,13 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
                   <div className="h-48 w-full overflow-hidden relative">
                     <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                     <div className="absolute top-4 right-4 flex gap-2">
+                      {/* Status Badge if Completed */}
+                      {event.status === 'completed' && (
+                        <div className="bg-slate-800/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm border border-white/20">
+                          COMPLETED
+                        </div>
+                      )}
+
                       <div className="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm border border-white/50">
                         {event.category}
                       </div>
@@ -236,7 +262,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
 
                 <div className="p-5 flex flex-col flex-1">
                   <div className="flex gap-4 mb-3">
-                    <div className="flex flex-col items-center justify-center bg-primary-50 rounded-xl w-14 h-14 border border-primary-100 text-primary-700 shrink-0">
+                    <div className={`flex flex-col items-center justify-center rounded-xl w-14 h-14 border shrink-0 ${event.status === 'completed' ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-primary-50 border-primary-100 text-primary-700'}`}>
                       <span className="text-[10px] font-bold uppercase">{month}</span>
                       <span className="text-xl font-bold leading-none">{day}</span>
                     </div>
@@ -268,16 +294,23 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
                       </div>
                     )
                   ) : (
-                    <button
-                      onClick={() => handleJoin(event.id)}
-                      disabled={joiningId === event.id || isFull}
-                      className={`w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center ${isFull
-                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                        : 'bg-slate-900 text-white hover:bg-primary-600 shadow-lg'
-                        }`}
-                    >
-                      {joiningId === event.id ? 'Sending...' : (isFull ? 'Quota Full' : 'Join Event')}
-                    </button>
+                    // Volunteer Actions
+                    event.status === 'completed' ? (
+                      <div className="w-full h-12 flex items-center justify-center text-slate-500 text-sm font-medium bg-slate-100 rounded-xl border border-slate-200">
+                        Event Concluded
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleJoin(event.id)}
+                        disabled={joiningId === event.id || isFull}
+                        className={`w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center ${isFull
+                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                          : 'bg-slate-900 text-white hover:bg-primary-600 shadow-lg'
+                          }`}
+                      >
+                        {joiningId === event.id ? 'Sending...' : (isFull ? 'Quota Full' : 'Join Event')}
+                      </button>
+                    )
                   )}
                 </div>
               </div>
