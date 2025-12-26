@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import { getEvents, getUserBookmarks, toggleBookmark, joinEvent } from '../../services/api';
-import { Event, UserRole } from '../../types';
+import { Event } from '../../types';
 import { useUserRole } from '../../hooks/useUserRole';
 
 const LIMIT = 12;
@@ -12,10 +11,9 @@ const LIMIT = 12;
 // ============================================================================
 
 export const EventFeed: React.FC = () => {
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   // Get role to conditionally render buttons
-  const { role, isOrganizer } = useUserRole();
-  const [searchParams] = useSearchParams();
+  const { isOrganizer } = useUserRole();
 
   // --- State: Data ---
   const [events, setEvents] = useState<Event[]>([]);
@@ -213,8 +211,9 @@ export const EventFeed: React.FC = () => {
         </div>
       ) : events.length === 0 ? (
         <div className="text-center py-24 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-          <p className="text-slate-400 font-medium">No events found matching your criteria.</p>
-          <button onClick={() => { setCategoryFilter('All'); setSearchQuery(''); }} className="mt-4 text-primary-600 text-sm font-bold hover:underline">Clear Filters</button>
+          <p className="text-slate-400 font-medium">No events found.</p>
+          <p className="text-xs text-slate-300 mt-2">Debug: {statusFilter} | {categoryFilter} | Org: {isOrganizer ? 'Yes' : 'No'}</p>
+          <button onClick={() => window.location.reload()} className="mt-4 text-primary-600 text-sm font-bold hover:underline">Refresh Page</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
@@ -297,9 +296,12 @@ export const EventFeed: React.FC = () => {
                   )}
 
                   {/* Organizer View (View Details Only) */}
-                  {isOrganizer && (
+                  {statusFilter === 'upcoming' && isOrganizer && (
                     <button
-                      // Card click already handles nav, this is just for visual call-to-action
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.location.href = `/events/${event.id}`;
+                      }}
                       className="w-full mt-4 py-2.5 rounded-xl text-sm font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
                     >
                       View Details
