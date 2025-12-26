@@ -174,8 +174,21 @@ async def get_events(
     query = select(Event)
     if organizerId:
         query = query.where(Event.organizerId == organizerId)
-    if status:
+    
+    if status == EventStatus.COMPLETED:
+        # Fallback: Show events that are explicitly completed OR are upcoming/pending but in the past
+        # This handles cases where RLS/DB errors prevented the auto-update
+        query = query.where(
+            (Event.status == EventStatus.COMPLETED) | 
+            ((Event.status == EventStatus.UPCOMING) & (Event.date < datetime.date.today()))
+        )
+    elif status == EventStatus.UPCOMING:
+        # Only show truly upcoming events
+        query = query.where(Event.status == EventStatus.UPCOMING)
+        query = query.where(Event.date >= datetime.date.today())
+    elif status:
         query = query.where(Event.status == status)
+
     if category and category != 'All':
         query = query.where(Event.category == category)
     if search:
