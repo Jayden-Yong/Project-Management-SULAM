@@ -16,6 +16,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
 
   // --- Filtering State ---
   // Filters are applied server-side for efficiency where possible
+  const [statusFilter, setStatusFilter] = useState('upcoming');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [locationFilter, setLocationFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,7 +45,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
       const skip = isLoadMore ? events.length : 0;
 
       const [newEvents, bookmarksData] = await Promise.all([
-        getEvents('upcoming', categoryFilter, debouncedSearch, skip, LIMIT),
+        getEvents(statusFilter === 'All' ? undefined : statusFilter, categoryFilter, debouncedSearch, skip, LIMIT),
         // Only fetch bookmarks on initial load or if user changed
         (!isLoadMore && user) ? getUserBookmarks(user.id) : Promise.resolve(null)
       ]);
@@ -64,7 +65,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [categoryFilter, debouncedSearch, user, events.length]); // Dependency on events.length is tricky for loadMore, usually handled by ref or passing value directly.
+  }, [statusFilter, categoryFilter, debouncedSearch, user, events.length]); // Dependency on events.length is tricky for loadMore, usually handled by ref or passing value directly.
 
   // 2. Initial & Filter Change Effect
   useEffect(() => {
@@ -72,7 +73,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
     setEvents([]);
     setHasMore(true);
     loadEvents(false);
-  }, [categoryFilter, debouncedSearch, user?.id]);
+  }, [statusFilter, categoryFilter, debouncedSearch, user?.id]);
   // Note: user.id added to reload if user logs in/out. 
   // removed `loadEvents` from dep array to avoid loops, purely relying on filter changes.
 
@@ -177,6 +178,16 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
             <option value="KK">🏠 Residential Colleges</option>
             <option value="Faculty">🏫 Faculties</option>
             <option value="Outdoors">🌲 Outdoors</option>
+          </select>
+
+          <select
+            className="h-10 px-4 rounded-full bg-white ring-1 ring-gray-200 text-sm font-medium text-slate-700 outline-none flex-shrink-0"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="upcoming">📅 Upcoming</option>
+            <option value="completed">🏁 Past Events</option>
+            <option value="All">📂 All Events</option>
           </select>
 
           {categories.map(c => (

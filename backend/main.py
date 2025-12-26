@@ -35,17 +35,17 @@ async def lifespan(app: FastAPI):
     Handle startup and shutdown events.
     Creates tables on startup if they don't exist.
     """
-    print(f"🚀 Starting {settings.APP_NAME}...", flush=True)
+    print(f"Starting {settings.APP_NAME}...", flush=True)
     try:
         SQLModel.metadata.create_all(engine)
-        print("✅ Database tables created/verified.", flush=True)
+        print("Database tables created/verified.", flush=True)
     except Exception as e:
-        print(f"❌ Database Connection Failed: {e}", flush=True)
+        print(f"Database Connection Failed: {e}", flush=True)
         # We don't raise here to allow the app to start and return 500s instead of crashing/timing out
         # This helps debugging on Render console
         
     yield
-    print("🛑 Shutting down...", flush=True)
+    print("Shutting down...", flush=True)
 
 app = FastAPI(
     title=settings.APP_NAME,
