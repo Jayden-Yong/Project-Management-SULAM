@@ -54,6 +54,12 @@ export interface Event {
   // Organizer Info
   organizerId: string;
   organizerName: string;
+
+  // Event Timing & Additional Info (NEW)
+  time?: string;           // Format: "HH:MM"
+  duration?: number;       // Duration in hours
+  contactPerson?: string;  // Contact information
+  requirements?: string;   // Prerequisites or items needed
 }
 
 export interface EventWithStats extends Event {

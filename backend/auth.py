@@ -1,9 +1,16 @@
+import time
 import httpx
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 
 from config import settings
+
+# Global simple cache for JWKS to avoid frequent fetching
+_jwks_cache = {
+    "keys": None,
+    "timestamp": 0
+}
 
 security = HTTPBearer()
 
@@ -14,11 +21,14 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
     """
     token = credentials.credentials
     
-    if not settings.CLERK_ISSUER:
-        print("WARNING: CLERK_ISSUER not set in environment. Skipping verification.")
+    # --- JWKS Caching Logic ---
+    global _jwks_cache
     
-    try:
-        # 1. Fetch Clerk's JWKS (Public Keys)
+    # Check if cache is fresh (valid for 1 hour)
+    if _jwks_cache["keys"] and time.time() - _jwks_cache["timestamp"] < 3600:
+        jwks = _jwks_cache["keys"]
+    else:
+        # Fetch fresh JWKS
         jwks_url = f"{settings.CLERK_ISSUER}/.well-known/jwks.json" if settings.CLERK_ISSUER else None
         
         if jwks_url:
@@ -28,7 +38,18 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
                     print(f"Auth Error: Failed to fetch JWKS from {jwks_url}. Status: {response.status_code}")
                     raise Exception("JWKS Fetch Failed")
                 jwks = response.json()
+                
+                # Update Cache
+                _jwks_cache = {
+                    "keys": jwks,
+                    "timestamp": time.time()
+                }
+        else:
+             # Should practically never happen in prod if env vars are set
+             jwks = {"keys": []}
 
+    try:
+        if jwks:
             # 2. Match the Key ID (kid)
             unverified_header = jwt.get_unverified_header(token)
             token_kid = unverified_header.get("kid")

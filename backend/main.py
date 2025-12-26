@@ -240,6 +240,12 @@ async def update_event_details(
     db_event.description = event_update.description
     db_event.tasks = event_update.tasks
     
+    # Update NEW fields
+    db_event.time = event_update.time
+    db_event.duration = event_update.duration
+    db_event.contactPerson = event_update.contactPerson
+    db_event.requirements = event_update.requirements
+    
     if event_update.imageUrl: 
         db_event.imageUrl = event_update.imageUrl
         

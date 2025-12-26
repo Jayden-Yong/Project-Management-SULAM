@@ -127,7 +127,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
   const displayedEvents = events.filter(e => {
     // Hide events where quota is full
     if (e.currentVolunteers >= e.maxVolunteers) return false;
-    
+
     if (locationFilter === 'All') return true;
     const keywords: Record<string, string[]> = {
       'KK': ['KK', 'College', 'Nazrin'],
@@ -247,6 +247,30 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
                   </div>
 
                   <p className="text-slate-600 text-sm line-clamp-3 mb-4 flex-1">{event.description}</p>
+
+                  {/* Event metadata */}
+                  <div className="flex flex-wrap gap-3 text-xs text-slate-500 mb-4">
+                    <div className="flex items-center gap-1.5">
+                      <span>📍</span>
+                      <span className="font-medium">{event.location}</span>
+                    </div>
+                    {event.time && (
+                      <div className="flex items-center gap-1.5">
+                        <span>🕐</span>
+                        <span className="font-medium">{event.time}</span>
+                      </div>
+                    )}
+                    {event.duration && (
+                      <div className="flex items-center gap-1.5">
+                        <span>⏱️</span>
+                        <span className="font-medium">{event.duration}h</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1.5">
+                      <span>👥</span>
+                      <span className="font-medium">{event.currentVolunteers}/{event.maxVolunteers}</span>
+                    </div>
+                  </div>
 
                   {/* Show tasks if available */}
                   {event.tasks && (
