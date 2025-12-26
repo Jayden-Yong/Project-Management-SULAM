@@ -14,7 +14,7 @@ interface EventCardProps {
   event: Event;
   isBookmarked: boolean;
   isOrganizer: boolean;
-  statusFilter: 'upcoming' | 'completed';
+  statusFilter: 'upcoming' | 'completed' | 'all';
   onBookmark: (e: React.MouseEvent, eventId: string) => void;
   onJoin: (e: React.MouseEvent, eventId: string) => void;
 }
@@ -92,7 +92,7 @@ const EventCard = memo(({ event, isBookmarked, isOrganizer, statusFilter, onBook
           </div>
 
           {/* Join Button (Only for Volunteer Role) */}
-          {statusFilter === 'upcoming' && !isOrganizer && (
+          {event.status === 'upcoming' && !isOrganizer && (
             <button
               onClick={(e) => onJoin(e, event.id)}
               disabled={event.currentVolunteers >= event.maxVolunteers}
@@ -103,7 +103,7 @@ const EventCard = memo(({ event, isBookmarked, isOrganizer, statusFilter, onBook
           )}
 
           {/* Organizer View (View Details Only) */}
-          {statusFilter === 'upcoming' && isOrganizer && (
+          {event.status === 'upcoming' && isOrganizer && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -142,7 +142,7 @@ export const EventFeed: React.FC = () => {
   const [retryCount, setRetryCount] = useState(0);
 
   // --- Filtering State ---
-  const [statusFilter, setStatusFilter] = useState<'upcoming' | 'completed'>('upcoming');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'completed'>('upcoming');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -168,7 +168,7 @@ export const EventFeed: React.FC = () => {
 
       // Parallel Fetch: Get events (public) AND bookmarks (user-specific)
       const [newEvents, bookmarksData] = await Promise.all([
-        getEvents(statusFilter, categoryFilter, debouncedSearch, skip, LIMIT),
+        getEvents(statusFilter === 'all' ? undefined : statusFilter, categoryFilter, debouncedSearch, skip, LIMIT),
         // Only fetch bookmarks on initial load if user is logged in
         (!isLoadMore && user?.id) ? getUserBookmarks(user.id) : Promise.resolve(null)
       ]);
@@ -279,7 +279,7 @@ export const EventFeed: React.FC = () => {
 
         {/* Status Toggle */}
         <div className="bg-slate-100 p-1 rounded-xl flex shrink-0">
-          {['upcoming', 'completed'].map((status) => (
+          {['all', 'upcoming', 'completed'].map((status) => (
             <button
               key={status}
               onClick={() => setStatusFilter(status as any)}
