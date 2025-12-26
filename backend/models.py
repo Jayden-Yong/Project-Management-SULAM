@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import date as dt_date
 from enum import Enum
 from typing import Optional, List
 
@@ -36,7 +36,7 @@ class Event(SQLModel, table=True):
     """
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     title: str = Field(index=True)
-    date: date = Field(index=True)
+    date: dt_date = Field(index=True)
     location: str
     category: str = Field(index=True)
     maxVolunteers: int
