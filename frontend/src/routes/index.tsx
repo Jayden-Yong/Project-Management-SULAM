@@ -12,6 +12,7 @@ const AuthPage = lazy(() => import('../pages/Event/AuthPage').then(module => ({ 
 const EventFeed = lazy(() => import('../pages/Event/EventFeed').then(module => ({ default: module.EventFeed })));
 const OrganizerDashboard = lazy(() => import('../pages/Event/OrganizerDashboard').then(module => ({ default: module.OrganizerDashboard })));
 const VolunteerDashboard = lazy(() => import('../pages/Event/VolunteerDashboard').then(module => ({ default: module.VolunteerDashboard })));
+const EventDetails = lazy(() => import('../pages/Event/EventDetails').then(module => ({ default: module.EventDetails })));
 
 /**
  * Helper to construct the User object from Clerk data.
@@ -57,7 +58,9 @@ export default function AppRoutes() {
                         <Route path="/" element={<Navigate to="/feed" replace />} />
 
                         {/* Public Feed (but requires SignIn for actions) */}
+                        {/* Public Feed (but requires SignIn for actions) */}
                         <Route path="/feed" element={<EventFeed />} />
+                        <Route path="/events/:id" element={<EventDetails />} />
 
                         {/* Auth Routes */}
                         <Route path="/login" element={<AuthPage />} />
