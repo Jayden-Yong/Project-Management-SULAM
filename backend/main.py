@@ -1,4 +1,7 @@
 import datetime
+import os
+import asyncio
+import httpx
 from contextlib import asynccontextmanager
 from typing import List, Optional
 
@@ -44,6 +47,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+@app.on_event("startup")
+async def keep_awake():
+    """
+    Background task to ping the service periodically to prevent Render spin-down.
+    """
+    async def ping_self():
+        # Render automatically sets RENDER_EXTERNAL_URL in the environment
+        url = os.environ.get("RENDER_EXTERNAL_URL") or "https://project-management-sulam-backend.onrender.com/"
+        async with httpx.AsyncClient() as client:
+            while True:
+                try:
+                    # Ping the root endpoint
+                    await client.get(url)
+                    print(f"Keep-awake ping to {url} successful")
+                except Exception as e:
+                    print(f"Keep-awake ping to {url} failed: {e}")
+                
+                # Sleep for 10 minutes (600 seconds)
+                # Render Free Tier spins down after 15 minutes of inactivity
+                await asyncio.sleep(600)
+
+    # Start the background task
+    asyncio.create_task(ping_self())
 
 @app.get("/")
 async def root():
