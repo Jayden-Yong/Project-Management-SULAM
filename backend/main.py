@@ -1,11 +1,14 @@
+import asyncio
 import datetime
+import httpx
 from contextlib import asynccontextmanager
 from typing import List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from sqlmodel import Session, SQLModel, col, func, select
+from fastapi.middleware.gzip import GZipMiddleware
+from sqlmodel import Session, SQLModel, col, func, select, text
 
 from auth import get_current_user, is_organizer
 from config import settings
@@ -44,8 +47,43 @@ async def lifespan(app: FastAPI):
         # We don't raise here to allow the app to start and return 500s instead of crashing/timing out
         # This helps debugging on Render console
         
+    # Start background keep-alive task
+    keep_alive_task = asyncio.create_task(keep_alive_logic())
+        
     yield
     print("🛑 Shutting down...", flush=True)
+    keep_alive_task.cancel()
+
+async def keep_alive_logic():
+    """
+    Background task to:
+    1. Ping DB to keep connection pool active.
+    2. Ping own Public URL to prevent Render free-tier spin-down (simulate traffic).
+    """
+    # URL to self-ping (Use the Render URL provided by user)
+    SELF_URL = "https://volunteer-backend-u15e.onrender.com/health"
+    
+    while True:
+        try:
+            await asyncio.sleep(20)
+            
+            # 1. DB Ping (Run in thread to avoid blocking async loop)
+            await asyncio.to_thread(db_ping_sync)
+            
+            # 2. Self-Ping (HTTP Traffic)
+            async with httpx.AsyncClient() as client:
+                await client.get(SELF_URL, timeout=10)
+                
+            print(f"💓 Keep-alive: DB & Self-Ping ({SELF_URL}) sent", flush=True)
+            
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            print(f"⚠️ Keep-alive failed: {e}", flush=True)
+
+def db_ping_sync():
+    with Session(engine) as session:
+        session.exec(text("SELECT 1"))
 
 app = FastAPI(
     title=settings.APP_NAME,
