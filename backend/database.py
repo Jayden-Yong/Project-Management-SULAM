@@ -12,10 +12,13 @@ if not settings.DATABASE_URL:
 engine = create_engine(
     settings.DATABASE_URL,
     poolclass=NullPool,   # Disable client-side pooling
-    pool_pre_ping=True,   # Still useful to check connection health before use
+    pool_pre_ping=False,  # Disable pre-ping to reduce overhead on transaction pooler
     echo=settings.DEBUG,
     connect_args={
         "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
         "connect_timeout": 10,
     }
 )
