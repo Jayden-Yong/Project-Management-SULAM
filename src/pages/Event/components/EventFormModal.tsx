@@ -85,10 +85,10 @@ export const EventFormModal: React.FC<Props> = ({
                         <div><label className="block text-xs font-bold text-slate-700 mb-1 border-b pb-2 mt-4 text-green-700">🔒 Post-Approval Details (Private)</label></div>
                         <div className="bg-green-50 p-4 rounded-xl border border-green-100 space-y-3">
                             <div>
-                                <label className="block text-xs font-bold text-green-800 mb-1">WhatsApp Group Link</label>
+                                <label className="block text-xs font-bold text-green-800 mb-1">Group Chat Link</label>
                                 <input
                                     type="url"
-                                    placeholder="https://chat.whatsapp.com/..."
+                                    placeholder="e.g. WhatsApp or Telegram link"
                                     className="w-full px-4 py-3 rounded-xl bg-white border border-green-200 focus:ring-2 focus:ring-green-500 text-sm"
                                     value={formData.whatsappLink || ''}
                                     onChange={e => setFormData({ ...formData, whatsappLink: e.target.value })}
