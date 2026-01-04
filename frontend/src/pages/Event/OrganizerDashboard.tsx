@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
   createEvent,
@@ -70,23 +71,29 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
   // Data Fetching
   // ==========================================
 
-  const fetchEvents = async () => {
-    try {
-      setIsLoading(true);
-      // Fetch stats-enriched events (efficient single query)
-      const data = await getOrganizerStats();
-      setEvents(data);
-    } catch (e) {
-      console.error("Failed to load events", e);
-    } finally {
-      setIsLoading(false);
-    }
+
+  const queryClient = useQueryClient();
+
+  // ==========================================
+  // Data Fetching: useQuery
+  // ==========================================
+
+  const { data: events = [], isLoading } = useQuery({
+    queryKey: ['organizerEvents', user.id],
+    queryFn: () => getOrganizerStats(),
+    staleTime: 1000 * 60 * 5 // 5 minutes
+  });
+
+  // Replaces the manual fetchEvents function
+  // We can trigger re-fetch by invalidating queries
+  const refetchEvents = () => {
+    queryClient.invalidateQueries({ queryKey: ['organizerEvents', user.id] });
   };
 
-  // Initial Load
-  useEffect(() => {
-    fetchEvents();
-  }, [user.id]);
+  // Replaces useEffect check
+  // useEffect(() => {
+  //   fetchEvents();
+  // }, [user.id]);
 
   // Load reviews lazily when modal opens
   useEffect(() => {
@@ -180,7 +187,7 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
         await createEvent(payload);
       }
       handleCloseModal();
-      fetchEvents();
+      refetchEvents();
     } catch (error) {
       console.error(error);
       alert("Failed to save event.");
@@ -191,7 +198,7 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
     if (confirm('Are you sure you want to conclude this event? This will move it to history.')) {
       try {
         await updateEventStatus(eventId, 'completed');
-        fetchEvents();
+        refetchEvents();
       } catch (error: any) {
         alert("Failed to conclude event");
       }
@@ -203,7 +210,8 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
       await updateRegistrationStatus(registrationId, action);
       const participants = await getEventRegistrations(eventId);
       setCurrentParticipants(participants);
-      fetchEvents(); // Update counts
+      setCurrentParticipants(participants);
+      refetchEvents(); // Update counts
     } catch (error: any) {
       alert("Action failed. Please check event capacity.");
     }

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   getBookmarkedEventsDetail,
@@ -9,7 +10,7 @@ import {
   updateFeedback,
   getEvent
 } from '../../services/api';
-import { Badge, Event, Registration, User } from '../../types';
+import { Badge, Event, User } from '../../types';
 import { VolunteerBadges } from './components/dashboard/VolunteerBadges';
 import { VolunteerEventList } from './components/dashboard/VolunteerEventList';
 import { VolunteerStatsCard } from './components/dashboard/VolunteerStatsCard';
@@ -27,13 +28,38 @@ interface Props {
 
 export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
 
-  // --- State: Data ---
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
-  const [badges, setBadges] = useState<Badge[]>([]);
-  const [bookmarkedEvents, setBookmarkedEvents] = useState<Event[]>([]);
+  // ==========================================
+  // Data Fetching
+  // ==========================================
+  const queryClient = useQueryClient();
+
+  // --- Data Fetching (React Query) ---
+  const { data: registrations = [], isLoading: loadingRegs } = useQuery({
+    queryKey: ['userRegistrations', user.id],
+    queryFn: () => getUserRegistrations(user.id),
+    staleTime: 1000 * 60 * 5
+  });
+
+  const { data: badges = [] } = useQuery({
+    queryKey: ['userBadges', user.id],
+    queryFn: () => getUserBadges(user.id),
+    staleTime: 1000 * 60 * 30
+  });
+
+  const { data: bookmarkedEvents = [] } = useQuery({
+    queryKey: ['bookmarkedEventsDetail', user.id],
+    queryFn: () => getBookmarkedEventsDetail(),
+    staleTime: 1000 * 60 * 5
+  });
+
+  const loading = loadingRegs;
+
+  const refreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ['userRegistrations', user.id] });
+    queryClient.invalidateQueries({ queryKey: ['userBadges', user.id] });
+  };
 
   // --- State: UI ---
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'schedule' | 'pending' | 'history' | 'saved'>('schedule');
 
   // --- State: Feedback Modal ---
@@ -44,35 +70,6 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
   // --- State: Details Modal ---
   const [viewEvent, setViewEvent] = useState<Event | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-
-
-
-  // ==========================================
-  // Data Fetching
-  // ==========================================
-
-  const loadData = async () => {
-    try {
-      // Fetch all dashboard data in parallel for speed
-      const [regsData, badgesData, savedEvents] = await Promise.all([
-        getUserRegistrations(user.id),
-        getUserBadges(user.id),
-        getBookmarkedEventsDetail()
-      ]);
-      setRegistrations(regsData);
-      setBadges(badgesData);
-      setBookmarkedEvents(savedEvents);
-
-    } catch (e) {
-      console.error("Failed to load dashboard data", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [user.id]);
 
   // ==========================================
   // Interaction Handlers
@@ -98,7 +95,7 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
     setFeedbackModal(null);
     setRating(5);
     setComment('');
-    loadData(); // Refresh to update "Rated" status and points
+    refreshData(); // Refresh to update "Rated" status and points
   };
 
   const openFeedbackModal = (eventId: string, title: string, feedbackId?: string) => {
@@ -108,23 +105,8 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
       eventTitle: title,
       feedbackId
     });
-    // Logic for pre-filling fetch is now handled in the List component to pass the ID, 
-    // BUT we need the specific Rating/Comment to fill the form state.
-    // In this refactor, let's just make sure when the modal opens, if feedbackId is present, we might need to re-fetch or pass data.
-    // Optimization: The List component fetches it. We should probably pass the data UP or refetch here. 
-    // For simplicity in this step: List handles fetch, but we need to put it into state.
 
-    // Note: The List component implementation I wrote in `VolunteerEventList.tsx` calls `onOpenFeedback` AFTER fetching.
-    // But wait, `VolunteerEventList` fetches data inside `handleEditClick`. It doesn't pass the data up.
-    // I need to adjust `VolunteerEventList` to pass the `rating` and `comment` too, or fetch it here.
-    // Correcting: Let's fetch it here for simplicity securely.
-    // Actually, looking at my `VolunteerEventList` implementation, it passed `feedbackId`. 
-    // I should have passed the whole feedback object. 
-    // Let's assume for now the user clicks, `List` fetches, verifies existence, and passes `id`.
-    // We still need to load the content into `rating` / `comment`.
-
-    // QUICK FIX: Since I can't easily change the `List` component I just wrote without another tool call, 
-    // I will add a `fetchFeedbackDetails` here if `feedbackId` is provided.
+    // Pre-fill if editing
     if (feedbackId) {
       getFeedbacks(user.id, eventId).then(feedbacks => {
         if (feedbacks.length > 0) {
