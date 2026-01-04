@@ -60,11 +60,14 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
     title: '',
     date: '',
     location: '',
+    locationCategory: 'Other',
     category: 'Campus Life',
     maxVolunteers: 20,
     description: '',
     tasks: '',
-    imageUrl: ''
+    imageUrl: '',
+    whatsappLink: '',
+    welcomeMessage: ''
   });
 
   // ==========================================
@@ -127,11 +130,14 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
       title: event.title,
       date: event.date,
       location: event.location,
+      locationCategory: event.locationCategory || 'Other',
       category: event.category,
       maxVolunteers: event.maxVolunteers,
       description: event.description,
       tasks: event.tasks || '',
-      imageUrl: event.imageUrl || ''
+      imageUrl: event.imageUrl || '',
+      whatsappLink: event.whatsappLink || '',
+      welcomeMessage: event.welcomeMessage || ''
     });
     setShowModal(true);
   };
@@ -140,8 +146,9 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
     setShowModal(false);
     setEditingEventId(null);
     setFormData({
-      title: '', date: '', location: '', category: 'Campus Life',
-      maxVolunteers: 20, description: '', tasks: '', imageUrl: ''
+      title: '', date: '', location: '', locationCategory: 'Other', category: 'Campus Life',
+      maxVolunteers: 20, description: '', tasks: '', imageUrl: '',
+      whatsappLink: '', welcomeMessage: ''
     });
   };
 

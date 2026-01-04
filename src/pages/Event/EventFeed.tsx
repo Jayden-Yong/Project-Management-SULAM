@@ -36,32 +36,11 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
     isLoading: isLoadingEvents,
     isFetching: isFetchingEvents
   } = useQuery({
-    queryKey: ['events', 'upcoming', categoryFilter, debouncedSearch],
-    queryFn: () => getEvents('upcoming', categoryFilter, debouncedSearch, 0, 100), // Fetching more to simpify client-side pagination for this demo or keeping limit logic if API supports it well.
-    // Note: The original code had pagination logic (load more). 
-    // Adapting to useQuery for infinite scroll is complex without changing UI significantly.
-    // For now, let's fetch a larger batch or keep it simple.
-    // Original used skip/limit.
-    // Let's stick to the simpler refactor: Cache the "All" view or basic search.
-    // Actually, to support "Load More" with React Query, we need useInfiniteQuery.
-    // BUT, the user just wants the "Delay" gone. 
-    // Let's just fetch the first page instantly from cache.
+    queryKey: ['events', 'upcoming', categoryFilter, locationFilter, debouncedSearch],
+    queryFn: () => getEvents('upcoming', categoryFilter, locationFilter, debouncedSearch, 0, 100),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5, // 5 min cache
   });
-
-  // Note: The original code had specific "Load More" logic with `skip` state.
-  // Replacing that with basic useQuery might break "Load More" if we don't use useInfiniteQuery.
-  // However, simpler first step: Just cache the first view.
-  // The original `events` state was additive. 
-  // To keep "Load More" working smoothly with cache, we'd need `useInfiniteQuery`.
-  // Let's switch to `useInfiniteQuery`?
-  // Or, for simplicity and meeting the immediate "latency" requirement, let's just use `useQuery` and fetch a slightly larger initial batch, 
-  // OR keep the manual load more but cache the initial state?
-  // No, mixing is bad.
-  // Let's use `useQuery` for the main list and maybe simplify pagination to "Next Page" or just fetch all for this scale.
-  // Given it's a campus feed, fetching 100 items is probably fine and faster than pagination complexity.
-  // Let's fetch 100 items for now as "All" to make it instant.
 
   // 2. Fetch User Bookmarks
   const { data: bookmarksData = [] } = useQuery({
@@ -76,8 +55,6 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
   }, [bookmarksData]);
 
   const loading = isLoadingEvents;
-  // const hasMore = false; // Disable load more for now in favor of larger initial fetch or useInfiniteQuery later
-  // We will hide "Load More" button if we fetch all.
 
   // 3. User Actions
   const handleJoin = async (eventId: string) => {
@@ -124,21 +101,11 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
     }
   };
 
-  // 4. Client-side Location Filtering (applied after fetch)
-  // Since we fetch paginated data, applying client-side filter might hide all results.
-  // Ideally this should be backend, but for now we filter what we have.
+  // 4. Client-side Location Filtering (REMOVED - now handled by Backend)
   const displayedEvents = events.filter(e => {
     // Hide events where quota is full
     if (e.currentVolunteers >= e.maxVolunteers) return false;
-
-    if (locationFilter === 'All') return true;
-    const keywords: Record<string, string[]> = {
-      'KK': ['KK', 'College', 'Nazrin'],
-      'Faculty': ['FCSIT', 'Faculty', 'Block'],
-      'Outdoors': ['Tasik', 'Rimba']
-    };
-    const targets = keywords[locationFilter] || [];
-    return targets.some(k => e.location.includes(k));
+    return true;
   });
 
 
@@ -177,9 +144,10 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
             onChange={(e) => setLocationFilter(e.target.value)}
           >
             <option value="All">🗺️ Anywhere in UM</option>
-            <option value="KK">🏠 Residential Colleges</option>
+            <option value="Residential College">🏠 Residential Colleges</option>
             <option value="Faculty">🏫 Faculties</option>
-            <option value="Outdoors">🌲 Outdoors</option>
+            <option value="Outdoor">🌲 Outdoors</option>
+            <option value="Other">📍 Other</option>
           </select>
 
           {categories.map(c => (

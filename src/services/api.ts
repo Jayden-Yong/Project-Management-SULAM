@@ -84,6 +84,7 @@ api.interceptors.response.use(
 export const getEvents = async (
   status?: string,
   category?: string,
+  locationCategory?: string,
   search?: string,
   skip: number = 0,
   limit: number = 100
@@ -91,6 +92,7 @@ export const getEvents = async (
   const params = new URLSearchParams();
   if (status) params.append('status', status);
   if (category && category !== 'All') params.append('category', category);
+  if (locationCategory && locationCategory !== 'All') params.append('locationCategory', locationCategory);
   if (search) params.append('search', search);
 
   params.append('skip', skip.toString());

@@ -70,6 +70,18 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
         print(f"------------------------")
         raise HTTPException(status_code=401, detail="Could not validate credentials")
 
+async def get_current_user_optional(credentials: Optional[HTTPAuthorizationCredentials] = Security(security, use_cache=False)) -> Optional[dict]:
+    """
+    Validation for optional endpoints.
+    Returns user payload if valid token exists, else None.
+    """
+    if not credentials:
+        return None
+    try:
+        return await get_current_user(credentials)
+    except HTTPException:
+        return None
+
 def is_organizer(user_payload: dict) -> bool:
     """
     Helper to check if the user has the 'organizer' role.

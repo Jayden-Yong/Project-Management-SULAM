@@ -14,6 +14,13 @@ class EventStatus(str, Enum):
     UPCOMING = "upcoming"
     COMPLETED = "completed"
 
+class LocationCategory(str, Enum):
+    """Broad categories for event locations to aid filtering."""
+    RESIDENTIAL_COLLEGE = "Residential College"
+    FACULTY = "Faculty"
+    OUTDOOR = "Outdoor"
+    OTHER = "Other"
+
 class RegistrationStatus(str, Enum):
     """Status lifecycle of a volunteer registration."""
     PENDING = "pending"
@@ -32,6 +39,7 @@ class Event(SQLModel, table=True):
     title: str
     date: date
     location: str
+    locationCategory: str = Field(default=LocationCategory.OTHER)
     category: str
     maxVolunteers: int
     currentVolunteers: int = Field(default=0)
@@ -44,6 +52,10 @@ class Event(SQLModel, table=True):
     
     # Serialized JSON or newline-separated string of tasks
     tasks: str = Field(default="")
+    
+    # Post-Approval Details (Private)
+    whatsappLink: Optional[str] = Field(default=None)
+    welcomeMessage: Optional[str] = Field(default=None)
     
     status: str = Field(default=EventStatus.UPCOMING)
 

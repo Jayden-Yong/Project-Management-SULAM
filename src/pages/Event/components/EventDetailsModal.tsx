@@ -71,6 +71,31 @@ export const EventDetailsModal: React.FC<Props> = ({ isOpen, onClose, event }) =
                                 <p className="text-sm text-slate-700 whitespace-pre-wrap">{event.tasks}</p>
                             </div>
                         )}
+
+                        {/* Post-Approval Details (Only visible if backend returns them) */}
+                        {(event.whatsappLink || event.welcomeMessage) && (
+                            <div className="bg-green-50 p-4 rounded-xl border border-green-100 animate-slide-up">
+                                <h3 className="text-xs font-bold text-green-800 uppercase tracking-wide mb-3">✅ Confirmed Volunteer Info</h3>
+
+                                {event.welcomeMessage && (
+                                    <div className="mb-4">
+                                        <p className="text-sm text-green-900 whitespace-pre-wrap font-medium">{event.welcomeMessage}</p>
+                                    </div>
+                                )}
+
+                                {event.whatsappLink && (
+                                    <a
+                                        href={event.whatsappLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition-colors shadow-sm"
+                                    >
+                                        <span>Join WhatsApp Group</span>
+                                        <span>💬</span>
+                                    </a>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 

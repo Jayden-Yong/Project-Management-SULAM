@@ -43,12 +43,15 @@ export interface Event {
   title: string;
   date: string;
   location: string;
+  locationCategory?: string;
   category: string;
   maxVolunteers: number;
   currentVolunteers: number;
   description: string;
   imageUrl?: string;
   tasks?: string;
+  whatsappLink?: string;
+  welcomeMessage?: string;
   status: 'upcoming' | 'completed';
 
   // Organizer Info

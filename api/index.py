@@ -10,7 +10,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from sqlmodel import Session, SQLModel, col, func, select, text
 
-from api.auth import get_current_user, is_organizer
+from api.auth import get_current_user, is_organizer, get_current_user_optional
 from api.config import settings
 from api.database import engine, get_session
 from api.models import (
@@ -19,6 +19,7 @@ from api.models import (
     Event,
     EventReadWithStats,
     EventStatus,
+    LocationCategory,
     Feedback,
     JoinRequest,
     Registration,
@@ -139,6 +140,7 @@ async def get_events(
     organizerId: Optional[str] = None, 
     status: Optional[str] = None,
     category: Optional[str] = None,
+    locationCategory: Optional[str] = None,
     search: Optional[str] = None,
     skip: int = 0,    
     limit: int = 100, 
@@ -179,6 +181,8 @@ async def get_events(
         query = query.where(Event.status == status)
     if category and category != 'All':
         query = query.where(Event.category == category)
+    if locationCategory and locationCategory != "All":
+        query = query.where(Event.locationCategory == locationCategory) 
     if search:
         query = query.where(col(Event.title).ilike(f"%{search}%"))
     
@@ -188,14 +192,39 @@ async def get_events(
 @app.get("/api/events/{event_id}", response_model=Event)
 async def get_event_by_id(
     event_id: str,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: Optional[dict] = Depends(get_current_user_optional)
 ):
     """
     Fetch a single event by ID.
+    Hides private details (WhatsApp link) unless user is the organizer or a confirmed participant.
     """
     event = session.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+        
+    # Check permissions
+    is_authorized = False
+    if current_user:
+        user_id = current_user.get("sub")
+        # 1. Is Organizer?
+        if event.organizerId == user_id:
+            is_authorized = True
+        else:
+            # 2. Is Confirmed Volunteer?
+            reg = session.exec(select(Registration).where(
+                Registration.eventId == event_id,
+                Registration.userId == user_id,
+                Registration.status == RegistrationStatus.CONFIRMED
+            )).first()
+            if reg:
+                is_authorized = True
+                
+    if not is_authorized:
+        # Hide private fields
+        event.whatsappLink = None
+        event.welcomeMessage = None
+        
     return event
 
 @app.post("/api/events", response_model=Event)
@@ -236,10 +265,13 @@ async def update_event_details(
     db_event.title = event_update.title
     db_event.date = event_update.date
     db_event.location = event_update.location
+    db_event.locationCategory = event_update.locationCategory
     db_event.category = event_update.category
     db_event.maxVolunteers = event_update.maxVolunteers
     db_event.description = event_update.description
     db_event.tasks = event_update.tasks
+    db_event.whatsappLink = event_update.whatsappLink
+    db_event.welcomeMessage = event_update.welcomeMessage
     
     if event_update.imageUrl: 
         db_event.imageUrl = event_update.imageUrl
