@@ -66,7 +66,46 @@ export const EventFormModal: React.FC<Props> = ({
                                 </select>
                             </div>
                         </div>
-                        <div><label className="block text-xs font-bold text-slate-700 mb-1">Location / Venue</label><input type="text" required placeholder="e.g., DTC, Tasik Varsiti" className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} /></div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div><label className="block text-xs font-bold text-slate-700 mb-1">Location / Venue</label><input type="text" required placeholder="e.g., DTC, Tasik Varsiti" className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} /></div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Location Type</label>
+                                <select
+                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm"
+                                    value={formData.locationCategory || 'Other'}
+                                    onChange={e => setFormData({ ...formData, locationCategory: e.target.value })}
+                                >
+                                    <option value="Residential College">Residential College</option>
+                                    <option value="Faculty">Faculty</option>
+                                    <option value="Outdoor">Outdoor</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div><label className="block text-xs font-bold text-slate-700 mb-1 border-b pb-2 mt-4 text-green-700">🔒 Post-Approval Details (Private)</label></div>
+                        <div className="bg-green-50 p-4 rounded-xl border border-green-100 space-y-3">
+                            <div>
+                                <label className="block text-xs font-bold text-green-800 mb-1">WhatsApp Group Link</label>
+                                <input
+                                    type="url"
+                                    placeholder="https://chat.whatsapp.com/..."
+                                    className="w-full px-4 py-3 rounded-xl bg-white border border-green-200 focus:ring-2 focus:ring-green-500 text-sm"
+                                    value={formData.whatsappLink || ''}
+                                    onChange={e => setFormData({ ...formData, whatsappLink: e.target.value })}
+                                />
+                                <p className="text-[10px] text-green-600 mt-1">Only visible to approved volunteers.</p>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-green-800 mb-1">Welcome Message / Instructions</label>
+                                <textarea
+                                    rows={2}
+                                    placeholder="Thank you for joining! Please bring..."
+                                    className="w-full px-4 py-3 rounded-xl bg-white border border-green-200 focus:ring-2 focus:ring-green-500 text-sm"
+                                    value={formData.welcomeMessage || ''}
+                                    onChange={e => setFormData({ ...formData, welcomeMessage: e.target.value })}
+                                />
+                            </div>
+                        </div>
                         <div><label className="block text-xs font-bold text-slate-700 mb-1">Max Volunteers</label><input type="number" required className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.maxVolunteers} onChange={e => setFormData({ ...formData, maxVolunteers: parseInt(e.target.value) })} /></div>
                         <div><label className="block text-xs font-bold text-slate-700 mb-1">Description</label><textarea required placeholder="What will students be doing?" rows={3} className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })}></textarea></div>
                         <div><label className="block text-xs font-bold text-slate-700 mb-1">Volunteer Roles & Tasks</label><textarea required placeholder="• Role A (Qty)&#10;• Role B (Qty)" rows={3} className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-primary-500 text-sm font-mono" value={formData.tasks} onChange={e => setFormData({ ...formData, tasks: e.target.value })}></textarea><p className="text-[10px] text-slate-400 mt-1">Be specific so students know what to expect.</p></div>
