@@ -10,10 +10,10 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from sqlmodel import Session, SQLModel, col, func, select, text
 
-from auth import get_current_user, is_organizer
-from config import settings
-from database import engine, get_session
-from models import (
+from api.auth import get_current_user, is_organizer
+from api.config import settings
+from api.database import engine, get_session
+from api.models import (
     Bookmark,
     BookmarkRequest,
     Event,
