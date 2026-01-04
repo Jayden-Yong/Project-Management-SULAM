@@ -1,4 +1,5 @@
 import httpx
+from typing import Optional
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
