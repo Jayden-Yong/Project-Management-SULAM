@@ -13,7 +13,7 @@ STEP 1: BACKEND SETUP (Terminal 1)
 ** Do not close this terminal after starting the server **
 
 1. Navigate to the backend directory:
-   cd D:\Documents\GitHub\Project-Management-SULAM\Project-Management-SULAM\backend
+   cd D:\Documents\GitHub\Project-Management-SULAM\backend
 
 2. Create a virtual environment (First time only):
    python -m venv venv
