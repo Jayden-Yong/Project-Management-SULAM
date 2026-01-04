@@ -4,6 +4,7 @@ import { setupAxiosInterceptors, wakeUp } from './services/api' // Updated impor
 import { setupSupabaseAuth } from './services/supabaseClient'
 import AppRoutes from './routes/'
 import { PageLoader } from './components/PageLoader'
+import { GoogleTranslate } from './components/GoogleTranslate'
 
 /**
  * Root Application Component.
@@ -35,7 +36,7 @@ function App() {
 
   return (
     <>
-      <div id="google_translate_element" className="fixed bottom-5 right-5 z-[100] drop-shadow-xl" />
+      <GoogleTranslate />
       <AppRoutes />
     </>
   )
