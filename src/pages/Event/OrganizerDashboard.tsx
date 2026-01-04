@@ -16,6 +16,7 @@ import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { EventFormModal } from './components/EventFormModal';
 import { ParticipantsModal } from './components/ParticipantsModal';
 import { ReviewsModal } from './components/ReviewsModal';
+import { ProfileEditModal } from './components/ProfileEditModal';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
 
 // ==========================================
@@ -33,6 +34,7 @@ interface Props {
 // 2. Add/Edit Events (Modal)
 // 3. Manage Volunteers (Modal)
 // 4. View Reviews (Modal)
+// 5. Edit Profile (Modal)
 // ==========================================
 
 export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
@@ -47,6 +49,7 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
   const [showModal, setShowModal] = useState(false);
   const [participantModal, setParticipantModal] = useState<{ isOpen: boolean, eventId: string, eventTitle: string } | null>(null);
   const [reviewsModal, setReviewsModal] = useState<{ isOpen: boolean, eventId: string, eventTitle: string } | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // --- State: Modal Data Cache ---
   const [currentParticipants, setCurrentParticipants] = useState<Registration[]>([]);
@@ -270,7 +273,12 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Club Admin</h1>
-            <p className="text-slate-500 text-sm">Welcome back, {user.name}</p>
+            <div className="flex items-center gap-2 text-slate-500 text-sm mt-1">
+              <p>Welcome back, {user.name}</p>
+              <button onClick={() => setShowProfileModal(true)} className="text-xs text-primary-600 hover:text-primary-800 font-bold bg-primary-50 px-2 py-0.5 rounded-full border border-primary-100 transition-colors">
+                Edit Profile
+              </button>
+            </div>
           </div>
           <button
             onClick={() => setShowModal(true)}
@@ -339,38 +347,38 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
             <p className="text-slate-400 text-sm font-medium">No events found in this category.</p>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {filteredEvents.map((event) => (
-              <div key={event.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row gap-6">
+              <div key={event.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6 hover:shadow-md transition-shadow">
 
                 {/* Event Image (Thumbnail) */}
                 {event.imageUrl && (
-                  <div className="w-full lg:w-48 h-32 lg:h-auto rounded-xl overflow-hidden mb-4 lg:mb-0 lg:mr-6 flex-shrink-0 border border-slate-100 relative">
+                  <div className="w-full md:w-48 h-48 md:h-auto rounded-xl overflow-hidden mb-4 md:mb-0 md:mr-0 flex-shrink-0 border border-slate-100 relative">
                     <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
                   </div>
                 )}
 
-                <div className="flex-1">
+                <div className="flex-1 flex flex-col">
                   <div className="mb-1">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-[10px] font-bold text-primary-700 bg-primary-50 px-2 py-1 rounded-md uppercase tracking-wider">{event.category}</span>
                       {activeTab === 'upcoming' && event.currentVolunteers >= event.maxVolunteers && (
                         <span className="text-[10px] font-bold text-orange-700 bg-orange-50 px-2 py-1 rounded-md uppercase tracking-wider border border-orange-100 flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
-                          Capacity Reached
+                          Full
                         </span>
                       )}
                     </div>
                     <span className="text-sm font-bold text-slate-400 block mb-1">{formatDate(event.date)}</span>
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-1">{event.title}</h3>
-                  <p className="text-sm text-slate-500 flex items-center gap-1">📍 {event.location}</p>
+                  <p className="text-sm text-slate-500 flex items-center gap-1 mb-4">📍 {event.location}</p>
 
                   {/* Review Stats (History Only) */}
                   {activeTab === 'completed' && (
                     <button
                       onClick={() => setReviewsModal({ isOpen: true, eventId: event.id, eventTitle: event.title })}
-                      className="mt-4 flex items-center gap-4 bg-yellow-50 p-3 rounded-xl w-fit border border-yellow-100 hover:bg-yellow-100 transition-colors text-left"
+                      className="mt-auto flex items-center gap-4 bg-yellow-50 p-3 rounded-xl w-fit border border-yellow-100 hover:bg-yellow-100 transition-colors text-left"
                     >
                       <div className="flex items-center text-yellow-600 gap-1">
                         <span className="text-xl font-bold">{event.avgRating || 0}</span>
@@ -385,11 +393,11 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
                 </div>
 
                 {/* Action Sidebar */}
-                <div className="flex flex-row lg:flex-col items-center lg:items-end gap-4 border-t lg:border-t-0 border-slate-100 pt-4 lg:pt-0 justify-between lg:justify-center">
+                <div className="flex flex-row md:flex-col items-center md:items-end gap-4 border-t md:border-t-0 border-slate-100 pt-4 md:pt-0 justify-between md:justify-center shrink-0">
 
                   {/* Volunteer Count */}
                   <div className="flex items-center gap-6 bg-slate-50 px-5 py-3 rounded-xl">
-                    <div className="text-center lg:text-right">
+                    <div className="text-center md:text-right">
                       <div className="text-2xl font-bold text-slate-900 leading-none">{event.currentVolunteers}</div>
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Joined</div>
                     </div>
@@ -397,22 +405,22 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
 
                   {/* Buttons */}
                   {activeTab === 'upcoming' && (
-                    <div className="flex flex-col gap-2 w-full lg:w-auto">
+                    <div className="flex flex-col gap-2 w-full md:w-auto">
                       <button
                         onClick={() => setParticipantModal({ isOpen: true, eventId: event.id, eventTitle: event.title })}
-                        className="w-full lg:w-40 h-10 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                        className="w-full md:w-48 h-11 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
                       >
                         Manage Volunteers
                       </button>
                       <button
                         onClick={() => handleEditClick(event)}
-                        className="w-full lg:w-40 h-10 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                        className="w-full md:w-48 h-11 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
                       >
                         Edit Details
                       </button>
                       <button
                         onClick={() => handleConclude(event.id)}
-                        className="w-full lg:w-40 h-10 text-xs font-bold text-primary-700 bg-primary-50 border border-primary-100 rounded-lg hover:bg-primary-100 transition-colors"
+                        className="w-full md:w-48 h-11 text-xs font-bold text-primary-700 bg-primary-50 border border-primary-100 rounded-lg hover:bg-primary-100 transition-colors"
                       >
                         Conclude Event
                       </button>
@@ -455,6 +463,11 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
         reviews={currentReviews}
         eventTitle={reviewsModal?.eventTitle || ''}
         loading={isModalLoading}
+      />
+
+      <ProfileEditModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
       />
     </>
   );

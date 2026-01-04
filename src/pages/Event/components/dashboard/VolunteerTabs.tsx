@@ -8,7 +8,7 @@ interface Props {
 
 export const VolunteerTabs: React.FC<Props> = ({ activeTab, onChange, pendingCount }) => {
     return (
-        <div className="bg-slate-100 p-1.5 rounded-2xl mb-6 flex">
+        <div className="bg-slate-100 p-1.5 rounded-2xl mb-6 flex overflow-x-auto no-scrollbar gap-1">
             {[
                 { id: 'schedule', label: 'My Schedule' },
                 { id: 'pending', label: `Applications (${pendingCount})` },
@@ -18,7 +18,7 @@ export const VolunteerTabs: React.FC<Props> = ({ activeTab, onChange, pendingCou
                 <button
                     key={tab.id}
                     onClick={() => onChange(tab.id as any)}
-                    className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${activeTab === tab.id
+                    className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 shrink-0 whitespace-nowrap ${activeTab === tab.id
                         ? 'bg-white text-slate-900 shadow-md'
                         : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
                         }`}

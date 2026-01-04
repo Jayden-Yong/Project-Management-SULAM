@@ -212,7 +212,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
           <p className="text-slate-400 text-sm">Try adjusting your filters</p>
         </div>
       ) : (
-        <div key={categoryFilter + locationFilter + debouncedSearch} className="space-y-5 animate-fade-in-up">
+        <div key={categoryFilter + locationFilter + debouncedSearch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-up">
           {displayedEvents.map((event) => {
             const isFull = event.currentVolunteers >= event.maxVolunteers;
             const isBookmarked = userBookmarks.includes(event.id);
@@ -221,7 +221,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
             const month = new Date(event.date).toLocaleString('default', { month: 'short' });
 
             return (
-              <div key={event.id} className="group bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col">
+              <div key={event.id} className="group bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col h-full">
                 {event.imageUrl && (
                   <div className="h-48 w-full overflow-hidden relative">
                     <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -232,7 +232,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
                       {!isOrganizer && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleBookmark(event.id); }}
-                          className={`w-8 h-8 flex items-center justify-center rounded-full shadow-sm transition-all active:scale-90 ${isBookmarked ? 'bg-red-500 text-white' : 'bg-white text-slate-400 hover:text-red-500'}`}
+                          className={`w-10 h-10 flex items-center justify-center rounded-full shadow-sm transition-all active:scale-90 ${isBookmarked ? 'bg-red-500 text-white' : 'bg-white text-slate-400 hover:text-red-500'}`}
                         >
                           {bookmarkingId === event.id ? '...' : (isBookmarked ? '♥' : '♡')}
                         </button>
@@ -248,106 +248,108 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
                       <span className="text-xl font-bold leading-none">{day}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-slate-900 line-clamp-2">{event.title}</h3>
+                      <h3 className="text-lg font-bold text-slate-900 line-clamp-2 md:text-base lg:text-lg">{event.title}</h3>
                       <div className="text-xs font-medium text-primary-600 mt-1 truncate">{event.organizerName}</div>
                     </div>
                   </div>
 
                   <p className="text-slate-600 text-sm line-clamp-3 mb-4 flex-1">{event.description}</p>
 
-                  {/* Show tasks if available */}
+                  {/* Show tasks if available - Hide on smaller cards if needed, keeping for now */}
                   {event.tasks && (
                     <div className="mb-4 bg-yellow-50 p-3 rounded-xl border border-yellow-100">
                       <span className="text-xs font-bold text-yellow-800 uppercase tracking-wide">Volunteer Roles</span>
-                      <p className="text-xs text-slate-700 mt-1 whitespace-pre-line">{event.tasks}</p>
+                      <p className="text-xs text-slate-700 mt-1 line-clamp-2">{event.tasks}</p>
                     </div>
                   )}
 
                   {/* Action Button Logic */}
-                  {isOrganizer ? (
-                    isMyEvent ? (
-                      <button onClick={() => onNavigate('dashboard')} className="w-full h-12 rounded-xl font-bold text-sm bg-white border-2 border-slate-100 text-slate-700 hover:border-primary-500 hover:text-primary-600 transition-colors">
-                        ⚙️ Manage My Event
-                      </button>
-                    ) : (
-                      <div className="w-full h-12 flex items-center justify-center text-slate-400 text-sm font-medium bg-slate-50 rounded-xl border border-slate-100 italic">
-                        View Only
-                      </div>
-                    )
-                  ) : (
-                    (() => {
-                      // Check user status
-                      const reg = registrations.find((r: Registration) => r.eventId === event.id);
-                      const status = reg?.status;
-
-                      if (status === 'confirmed') {
-                        return (
-                          <button
-                            onClick={() => handleOpenDetails(event.id)}
-                            className="w-full h-12 rounded-xl font-bold text-sm bg-green-100 text-green-700 hover:bg-green-200 shadow-sm flex items-center justify-center gap-2"
-                          >
-                            <span>✅ Approved &ndash; View Details</span>
-                          </button>
-                        );
-                      }
-
-                      if (status === 'pending') {
-                        return (
-                          <button
-                            disabled
-                            className="w-full h-12 rounded-xl font-bold text-sm bg-yellow-50 text-yellow-600 border border-yellow-100 cursor-not-allowed flex items-center justify-center gap-2"
-                          >
-                            <span>⏳ Pending Approval</span>
-                          </button>
-                        );
-                      }
-
-                      if (status === 'rejected') {
-                        return (
-                          <button
-                            disabled
-                            className="w-full h-12 rounded-xl font-bold text-sm bg-red-50 text-red-400 border border-red-100 cursor-not-allowed"
-                          >
-                            ❌ Application Rejected
-                          </button>
-                        );
-                      }
-
-                      return (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleOpenDetails(event.id)}
-                            className="flex-1 h-12 rounded-xl font-bold text-sm bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors"
-                          >
-                            View Details
-                          </button>
-                          <button
-                            onClick={() => handleJoin(event.id)}
-                            disabled={joiningId === event.id || isFull}
-                            className={`flex-1 h-12 rounded-xl font-bold text-sm flex items-center justify-center ${isFull
-                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                              : 'bg-slate-900 text-white hover:bg-primary-600 shadow-lg'
-                              }`}
-                          >
-                            {joiningId === event.id ? 'Sending...' : (isFull ? 'Full' : 'Join')}
-                          </button>
+                  <div className="mt-auto pt-2">
+                    {isOrganizer ? (
+                      isMyEvent ? (
+                        <button onClick={() => onNavigate('dashboard')} className="w-full h-11 rounded-xl font-bold text-sm bg-white border-2 border-slate-100 text-slate-700 hover:border-primary-500 hover:text-primary-600 transition-colors">
+                          ⚙️ Manage
+                        </button>
+                      ) : (
+                        <div className="w-full h-11 flex items-center justify-center text-slate-400 text-sm font-medium bg-slate-50 rounded-xl border border-slate-100 italic">
+                          View Only
                         </div>
-                      );
-                    })()
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+                      )
+                    ) : (
+                      (() => {
+                        // Check user status
+                        const reg = registrations.find((r: Registration) => r.eventId === event.id);
+                        const status = reg?.status;
 
-      {/* Details Modal */}
-      <EventDetailsModal
-        isOpen={!!selectedEventId}
-        onClose={handleCloseDetails}
-        event={selectedEventData}
+                        if (status === 'confirmed') {
+                          return (
+                            <button
+                              onClick={() => handleOpenDetails(event.id)}
+                              className="w-full h-11 rounded-xl font-bold text-sm bg-green-100 text-green-700 hover:bg-green-200 shadow-sm flex items-center justify-center gap-2"
+                            >
+                              <span>✅ Approved</span>
+                            </button>
+                          );
+                        }
+
+                        if (status === 'pending') {
+                          return (
+                            <button
+                              disabled
+                              className="w-full h-11 rounded-xl font-bold text-sm bg-yellow-50 text-yellow-600 border border-yellow-100 cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                              <span>⏳ Pending</span>
+                            </button>
+                          );
+                        }
+
+                        if (status === 'rejected') {
+                          return (
+                            <button
+                              disabled
+                              className="w-full h-12 rounded-xl font-bold text-sm bg-red-50 text-red-400 border border-red-100 cursor-not-allowed"
+                            >
+                              ❌ Application Rejected
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleOpenDetails(event.id)}
+                              className="flex-1 h-12 rounded-xl font-bold text-sm bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors"
+                            >
+                              View Details
+                            </button>
+                            <button
+                              onClick={() => handleJoin(event.id)}
+                              disabled={joiningId === event.id || isFull}
+                              className={`flex-1 h-12 rounded-xl font-bold text-sm flex items-center justify-center ${isFull
+                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                : 'bg-slate-900 text-white hover:bg-primary-600 shadow-lg'
+                                }`}
+                            >
+                              {joiningId === event.id ? 'Sending...' : (isFull ? 'Full' : 'Join')}
+                            </button>
+                          </div>
+                        );
+                      })()
+                    )}
+                  </div>
+                </div>
+                );
+          })}
+              </div>
+            )
+          }
+
+      {/* Details Modal */ }
+            < EventDetailsModal
+        isOpen = {!!selectedEventId}
+          onClose={handleCloseDetails}
+          event={selectedEventData}
       />
-    </div>
-  );
+        </div>
+      );
 };

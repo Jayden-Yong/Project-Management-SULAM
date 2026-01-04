@@ -35,6 +35,7 @@ function App() {
 
   return (
     <>
+      <div id="google_translate_element" className="fixed bottom-5 right-5 z-[100] drop-shadow-xl" />
       <AppRoutes />
     </>
   )
