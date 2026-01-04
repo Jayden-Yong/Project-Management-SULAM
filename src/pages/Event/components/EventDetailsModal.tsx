@@ -1,4 +1,5 @@
-import React from 'react';
+import { Copy, Check, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
 import { Event } from '../../../types';
 
 interface Props {
@@ -12,7 +13,17 @@ interface Props {
  * Read-only view for volunteers to see full event info.
  */
 export const EventDetailsModal: React.FC<Props> = ({ isOpen, onClose, event }) => {
+    const [isCopied, setIsCopied] = useState(false);
+
     if (!isOpen || !event) return null;
+
+    const handleCopy = () => {
+        if (event.whatsappLink) {
+            navigator.clipboard.writeText(event.whatsappLink);
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
@@ -84,15 +95,42 @@ export const EventDetailsModal: React.FC<Props> = ({ isOpen, onClose, event }) =
                                 )}
 
                                 {event.whatsappLink && (
-                                    <a
-                                        href={event.whatsappLink}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition-colors shadow-sm"
-                                    >
-                                        <span>Join Group Chat</span>
-                                        <span>💬</span>
-                                    </a>
+                                    <div className="mt-4">
+                                        <label className="text-xs font-bold text-green-800 uppercase tracking-wide block mb-1">
+                                            Group Chat Link
+                                        </label>
+                                        <div className="flex items-center gap-2">
+                                            <div className="relative flex-1">
+                                                <input
+                                                    type="text"
+                                                    readOnly
+                                                    value={event.whatsappLink}
+                                                    className="w-full pl-3 pr-10 py-2 bg-white border border-green-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                                                />
+                                            </div>
+
+                                            <button
+                                                onClick={handleCopy}
+                                                className="p-2 bg-white border border-green-200 rounded-lg text-green-700 hover:bg-green-100 hover:border-green-300 transition-all shadow-sm"
+                                                title="Copy Link"
+                                            >
+                                                {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                            </button>
+
+                                            <a
+                                                href={event.whatsappLink}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-2 bg-green-600 border border-transparent rounded-lg text-white hover:bg-green-700 transition-all shadow-sm"
+                                                title="Open Link"
+                                            >
+                                                <ExternalLink className="w-4 h-4" />
+                                            </a>
+                                        </div>
+                                        <p className="text-[10px] text-green-700 mt-1 opacity-80">
+                                            Check the link before joining. Organizers may occasionally leave this blank.
+                                        </p>
+                                    </div>
                                 )}
                             </div>
                         )}

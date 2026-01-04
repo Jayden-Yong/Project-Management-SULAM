@@ -173,7 +173,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 bg-gray-50">
-      <div className="w-full max-w-sm bg-white p-8 sm:p-10 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+      <div className="w-full max-w-sm bg-white p-8 sm:p-10 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 animate-fade-in-up">
 
         {/* HEADER & TABS */}
         <div className="text-center mb-8">
