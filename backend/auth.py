@@ -55,6 +55,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
                 rsa_key,
                 algorithms=["RS256"],
                 audience=None,
+                issuer=settings.CLERK_ISSUER,
                 options={"verify_exp": True}, 
                 leeway=120
             )
