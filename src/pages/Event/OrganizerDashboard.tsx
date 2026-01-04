@@ -178,6 +178,11 @@ export const OrganizerDashboard: React.FC<Props> = ({ user }) => {
     e.preventDefault();
     if (uploading) return;
 
+    if (!formData.date) {
+      alert("Please select a date for the event.");
+      return;
+    }
+
     try {
       const payload = { ...formData, organizerId: user.id, organizerName: user.name };
 
