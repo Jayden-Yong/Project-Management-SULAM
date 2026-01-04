@@ -11,6 +11,21 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+// ===================================
+// UTILS
+// ===================================
+
+/**
+ * Sends a lightweight request to wake up the serverless function.
+ */
+export const wakeUp = async () => {
+  try {
+    await api.get('/health');
+  } catch (e) {
+    // Ignore errors, just a warm-up
+  }
+}
+
 
 // --- Dynamic Token Injection (Clerk Integration) ---
 // Allows the frontend to inject the latest user session token into every request.
@@ -24,7 +39,14 @@ export const setupAxiosInterceptors = (tokenGetter: () => Promise<string | null>
   getTokenFn = tokenGetter;
 };
 
+import NProgress from 'nprogress';
+import 'nprogress/nprogress.css';
+
+// Configure NProgress
+NProgress.configure({ showSpinner: false, speed: 400 });
+
 api.interceptors.request.use(async (config) => {
+  NProgress.start(); // Start global loading bar
   if (getTokenFn) {
     try {
       const token = await getTokenFn();
@@ -36,7 +58,21 @@ api.interceptors.request.use(async (config) => {
     }
   }
   return config;
-}, (error) => Promise.reject(error));
+}, (error) => {
+  NProgress.done();
+  return Promise.reject(error);
+});
+
+api.interceptors.response.use(
+  (response) => {
+    NProgress.done();
+    return response;
+  },
+  (error) => {
+    NProgress.done();
+    return Promise.reject(error);
+  }
+);
 
 // ============================================================================
 // Event Management (Organizer & Public Feed)

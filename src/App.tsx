@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/clerk-react'
-import { setupAxiosInterceptors } from './services/api' // Updated import
+import { setupAxiosInterceptors, wakeUp } from './services/api' // Updated import
 import { setupSupabaseAuth } from './services/supabaseClient'
 import AppRoutes from './routes/'
 import { PageLoader } from './components/PageLoader'
@@ -20,6 +20,7 @@ function App() {
       setupAxiosInterceptors(getToken);
       setupSupabaseAuth(getToken);
       setAuthReady(true);
+      wakeUp(); // Fire-and-forget warm-up
     }
   }, [isLoaded, getToken]);
 
