@@ -16,6 +16,7 @@ import { VolunteerEventList } from './components/dashboard/VolunteerEventList';
 import { VolunteerStatsCard } from './components/dashboard/VolunteerStatsCard';
 import { VolunteerTabs } from './components/dashboard/VolunteerTabs';
 import { ProfileEditModal } from './components/ProfileEditModal';
+import { EventDetailsModal } from './components/EventDetailsModal';
 
 interface Props {
   user: User;
