@@ -338,18 +338,19 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
                     )}
                   </div>
                 </div>
-                );
-          })}
               </div>
-            )
-          }
-
-      {/* Details Modal */ }
-            < EventDetailsModal
-        isOpen = {!!selectedEventId}
-          onClose={handleCloseDetails}
-          event={selectedEventData}
-      />
+            );
+          })}
         </div>
-      );
+      )
+      }
+
+      {/* Details Modal */}
+      < EventDetailsModal
+        isOpen={!!selectedEventId}
+        onClose={handleCloseDetails}
+        event={selectedEventData}
+      />
+    </div>
+  );
 };
