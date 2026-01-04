@@ -58,7 +58,6 @@ export const VolunteerEventList: React.FC<Props> = ({
             );
         }
         return (
-        return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[200px]">
                 {bookmarkedEvents.map(event => (
                     <div key={event.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
