@@ -12,8 +12,8 @@ STEP 1: BACKEND SETUP (Terminal 1)
 ------------------------------------------------------------
 ** Do not close this terminal after starting the server **
 
-1. Navigate to the backend directory:
-   cd D:\Documents\GitHub\Project-Management-SULAM\backend
+1. Open a terminal in the ROOT directory of the project.
+   (e.g., D:\Documents\GitHub\Project-Management-SULAM)
 
 2. Create a virtual environment (First time only):
    python -m venv venv
@@ -25,20 +25,20 @@ STEP 1: BACKEND SETUP (Terminal 1)
    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 4. Install dependencies:
-   pip install -r requirements.txt
+   pip install -r api/requirements.txt
 
 5. Run the Backend Server:
-   python main.py
+   uvicorn api.index:app --reload
 
-   -> Success Status: You should see "Uvicorn running on http://0.0.0.0:8000"
+   -> Success Status: You should see "Uvicorn running on http://127.0.0.1:8000"
 
 ------------------------------------------------------------
 STEP 2: FRONTEND SETUP (Terminal 2)
 ------------------------------------------------------------
 ** Open a NEW terminal window (Click '+' in VS Code) **
 
-1. Navigate to the frontend directory:
-   cd D:\Documents\GitHub\Project-Management-SULAM\Project-Management-SULAM\frontend
+1. Ensure you are in the ROOT directory:
+   (e.g., D:\Documents\GitHub\Project-Management-SULAM)
 
 2. Install dependencies (First time only):
    npm install
@@ -55,18 +55,25 @@ STEP 3: HOW TO ACCESS
 2. Go to: http://localhost:5173
 
 * To view Backend API Documentation, go to: http://localhost:8000/docs
+  (Note: The API is served at /api, but docs are at the root or /api/docs depending on configuration)
 
 ------------------------------------------------------------
 TROUBLESHOOTING & CONFIGURATION (.ENV)
 ------------------------------------------------------------
 If the application cannot connect to the database or login fails, 
-please check your environment variables:
+please check your environment variables.
 
-1. Backend Folder (.env file):
-   - Must contain: SUPABASE_URL, SUPABASE_KEY, CLERK_SECRET_KEY
+1. Create .env files:
+   - Root folder: Copy .env.example -> .env
+   - api/ folder: Copy .env.example -> .env
 
-2. Frontend Folder (.env file):
+2. Backend Configuration (api/.env):
+   - Must contain: SUPABASE_URL, SUPABASE_KEY, CLERK_SECRET_KEY, DATABASE_URL
+
+3. Frontend Configuration (Root .env):
    - Must contain: VITE_CLERK_PUBLISHABLE_KEY
-   - API URL setting: VITE_API_URL=http://localhost:8000
+   - API URL setting: VITE_API_URL=http://localhost:8000/api
+   
+   [IMPORTANT] Ensure VITE_API_URL ends with /api because the backend logic lives there.
 
 ============================================================

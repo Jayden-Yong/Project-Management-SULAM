@@ -1,0 +1,11 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="primary_gradient" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#14b8a6"/> <!-- teal-500 -->
+      <stop offset="100%" stop-color="#0f766e"/> <!-- teal-700 -->
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="60" fill="url(#primary_gradient)" />
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" 
+        font-family="sans-serif" font-weight="bold" font-size="160" fill="white">U</text>
+</svg>
