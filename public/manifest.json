@@ -1,0 +1,17 @@
+{
+    "name": "UMission - Universiti Malaya Volunteer Hub",
+    "short_name": "UMission",
+    "description": "Connect with volunteer opportunities at Universiti Malaya",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#0d9488",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/logo.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        }
+    ]
+}

@@ -15,7 +15,7 @@ import { VolunteerBadges } from './components/dashboard/VolunteerBadges';
 import { VolunteerEventList } from './components/dashboard/VolunteerEventList';
 import { VolunteerStatsCard } from './components/dashboard/VolunteerStatsCard';
 import { VolunteerTabs } from './components/dashboard/VolunteerTabs';
-import { EventDetailsModal } from './components/EventDetailsModal';
+import { ProfileEditModal } from './components/ProfileEditModal';
 
 interface Props {
   user: User;
@@ -70,6 +70,9 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
   // --- State: Details Modal ---
   const [viewEvent, setViewEvent] = useState<Event | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  // --- State: Profile Modal ---
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // ==========================================
   // Interaction Handlers
@@ -161,6 +164,7 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
         user={user}
         totalPoints={totalPoints}
         completedCount={pastEvents.length}
+        onEditProfile={() => setShowProfileModal(true)}
       />
 
       <VolunteerBadges badges={badges} />
@@ -188,6 +192,11 @@ export const VolunteerDashboard: React.FC<Props> = ({ user }) => {
         isOpen={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}
         event={viewEvent}
+      />
+
+      <ProfileEditModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
       />
 
       {/* Responsive Feedback Modal */}

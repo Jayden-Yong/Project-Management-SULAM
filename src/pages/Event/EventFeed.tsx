@@ -212,7 +212,7 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
           <p className="text-slate-400 text-sm">Try adjusting your filters</p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div key={categoryFilter + locationFilter + debouncedSearch} className="space-y-5 animate-fade-in-up">
           {displayedEvents.map((event) => {
             const isFull = event.currentVolunteers >= event.maxVolunteers;
             const isBookmarked = userBookmarks.includes(event.id);

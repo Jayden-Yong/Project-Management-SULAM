@@ -26,7 +26,7 @@ export const EventFormModal: React.FC<Props> = ({
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}></div>
-            <div className="bg-white w-full h-[90vh] sm:h-auto sm:max-h-[90vh] sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col relative z-10">
+            <div className="bg-white w-full h-[90vh] sm:h-auto sm:max-h-[90vh] sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col relative z-10 animate-slide-up sm:animate-fade-in-up">
                 <div className="flex justify-between items-center p-5 border-b border-slate-100">
                     <h3 className="font-bold text-lg text-slate-900">{isEditing ? 'Edit Activity' : 'Plan Activity'}</h3>
                     <button onClick={onClose} className="p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">✕</button>

@@ -22,7 +22,7 @@ export const ReviewsModal: React.FC<Props> = ({ isOpen, onClose, reviews, eventT
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}></div>
-            <div className="bg-white w-full h-[80vh] sm:h-[80vh] sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col relative z-10">
+            <div className="bg-white w-full h-[80vh] sm:h-[80vh] sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col relative z-10 animate-slide-up sm:animate-fade-in-up">
                 <div className="flex justify-between items-center p-5 border-b border-slate-100">
                     <div><h3 className="font-bold text-lg text-slate-900">Student Reviews</h3><p className="text-xs text-slate-500">{eventTitle}</p></div>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>

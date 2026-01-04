@@ -31,11 +31,11 @@ export const EventDetailsModal: React.FC<Props> = ({ isOpen, onClose, event }) =
             <div className="bg-white w-full h-[85vh] sm:h-auto sm:max-h-[85vh] sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col relative z-10 animate-slide-up sm:animate-fade-in-up">
 
                 {/* Header Image */}
-                <div className="relative h-48 sm:h-56 bg-slate-100">
+                <div className="relative h-48 sm:h-56 bg-gradient-to-br from-primary-50 to-primary-100">
                     {event.imageUrl ? (
                         <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-300">
+                        <div className="w-full h-full flex items-center justify-center text-primary-200">
                             <span className="text-4xl">📷</span>
                         </div>
                     )}
