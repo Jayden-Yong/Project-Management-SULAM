@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 
 import { Navbar } from '../components/Navbar';
+import { Footer } from '../components/Footer';
 import { PageLoader } from '../components/PageLoader';
 import { useUserRole } from '../hooks/useUserRole';
 import { User, UserRole } from '../types';
@@ -60,33 +61,36 @@ const FeedWithUser = () => {
 export default function AppRoutes() {
     return (
         <BrowserRouter>
-            <Navbar />
-            <div className="min-h-screen bg-gray-50">
-                <Suspense fallback={<PageLoader />}>
-                    <Routes>
-                        <Route path="/" element={<Navigate to="/feed" replace />} />
+            <div className="flex flex-col min-h-screen bg-gray-50">
+                <Navbar />
+                <main className="flex-grow">
+                    <Suspense fallback={<PageLoader />}>
+                        <Routes>
+                            <Route path="/" element={<Navigate to="/feed" replace />} />
 
-                        {/* Public Feed (but requires SignIn for actions) */}
-                        <Route path="/feed" element={
-                            <>
-                                <SignedIn><FeedWithUser /></SignedIn>
-                                <SignedOut><Navigate to="/login" replace /></SignedOut>
-                            </>
-                        } />
+                            {/* Public Feed (but requires SignIn for actions) */}
+                            <Route path="/feed" element={
+                                <>
+                                    <SignedIn><FeedWithUser /></SignedIn>
+                                    <SignedOut><Navigate to="/login" replace /></SignedOut>
+                                </>
+                            } />
 
-                        {/* Auth Routes */}
-                        <Route path="/login" element={<AuthPage />} />
-                        <Route path="/signup" element={<AuthPage />} />
+                            {/* Auth Routes */}
+                            <Route path="/login" element={<AuthPage />} />
+                            <Route path="/signup" element={<AuthPage />} />
 
-                        {/* Protected Dashboard */}
-                        <Route path="/dashboard" element={
-                            <>
-                                <SignedIn><DashboardWithUser /></SignedIn>
-                                <SignedOut><Navigate to="/login" replace /></SignedOut>
-                            </>
-                        } />
-                    </Routes>
-                </Suspense>
+                            {/* Protected Dashboard */}
+                            <Route path="/dashboard" element={
+                                <>
+                                    <SignedIn><DashboardWithUser /></SignedIn>
+                                    <SignedOut><Navigate to="/login" replace /></SignedOut>
+                                </>
+                            } />
+                        </Routes>
+                    </Suspense>
+                </main>
+                <Footer />
             </div>
         </BrowserRouter>
     )
