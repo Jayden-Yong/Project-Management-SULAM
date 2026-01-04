@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 
-import { getEvents, getUserBookmarks, joinEvent, toggleBookmark } from '../../services/api';
-import { Event, User, UserRole } from '../../types';
+import { getEvents, getUserBookmarks, joinEvent, toggleBookmark, getUserRegistrations, getEvent } from '../../services/api';
+import { Event, User, UserRole, Registration } from '../../types';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
+import { EventDetailsModal } from './components/EventDetailsModal';
 
 interface Props {
   user: User | null;
@@ -53,6 +54,41 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
   useEffect(() => {
     if (bookmarksData) setUserBookmarks(bookmarksData as string[]);
   }, [bookmarksData]);
+
+  // 3a. Fetch User Registrations (to show status joined/approved)
+  const { data: registrations = [], refetch: refetchRegistrations } = useQuery({
+    queryKey: ['registrations', user?.id],
+    queryFn: () => user ? getUserRegistrations(user.id) : Promise.resolve([]),
+    enabled: !!user
+  });
+
+  // Modal State
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedEventData, setSelectedEventData] = useState<Event | null>(null);
+
+  // Fetch single event details when modal opens (ensures we get private links if approved)
+  const { data: fullEventDetails } = useQuery({
+    queryKey: ['event', selectedEventId],
+    queryFn: () => selectedEventId ? getEvent(selectedEventId) : Promise.resolve(null),
+    enabled: !!selectedEventId
+  });
+
+  const handleOpenDetails = (eventId: string) => {
+    setSelectedEventId(eventId);
+    // Optimistically show current list data while fetching full data
+    const listEvent = events.find(e => e.id === eventId) || null;
+    setSelectedEventData(listEvent);
+  };
+
+  // Update modal data when full details arrive
+  useEffect(() => {
+    if (fullEventDetails) setSelectedEventData(fullEventDetails);
+  }, [fullEventDetails]);
+
+  const handleCloseDetails = () => {
+    setSelectedEventId(null);
+    setSelectedEventData(null);
+  }
 
   const loading = isLoadingEvents;
 
@@ -239,16 +275,65 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
                       </div>
                     )
                   ) : (
-                    <button
-                      onClick={() => handleJoin(event.id)}
-                      disabled={joiningId === event.id || isFull}
-                      className={`w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center ${isFull
-                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                        : 'bg-slate-900 text-white hover:bg-primary-600 shadow-lg'
-                        }`}
-                    >
-                      {joiningId === event.id ? 'Sending...' : (isFull ? 'Quota Full' : 'Join Event')}
-                    </button>
+                    (() => {
+                      // Check user status
+                      const reg = registrations.find((r: Registration) => r.eventId === event.id);
+                      const status = reg?.status;
+
+                      if (status === 'confirmed') {
+                        return (
+                          <button
+                            onClick={() => handleOpenDetails(event.id)}
+                            className="w-full h-12 rounded-xl font-bold text-sm bg-green-100 text-green-700 hover:bg-green-200 shadow-sm flex items-center justify-center gap-2"
+                          >
+                            <span>✅ Approved &ndash; View Details</span>
+                          </button>
+                        );
+                      }
+
+                      if (status === 'pending') {
+                        return (
+                          <button
+                            disabled
+                            className="w-full h-12 rounded-xl font-bold text-sm bg-yellow-50 text-yellow-600 border border-yellow-100 cursor-not-allowed flex items-center justify-center gap-2"
+                          >
+                            <span>⏳ Pending Approval</span>
+                          </button>
+                        );
+                      }
+
+                      if (status === 'rejected') {
+                        return (
+                          <button
+                            disabled
+                            className="w-full h-12 rounded-xl font-bold text-sm bg-red-50 text-red-400 border border-red-100 cursor-not-allowed"
+                          >
+                            ❌ Application Rejected
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleOpenDetails(event.id)}
+                            className="flex-1 h-12 rounded-xl font-bold text-sm bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors"
+                          >
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => handleJoin(event.id)}
+                            disabled={joiningId === event.id || isFull}
+                            className={`flex-1 h-12 rounded-xl font-bold text-sm flex items-center justify-center ${isFull
+                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                              : 'bg-slate-900 text-white hover:bg-primary-600 shadow-lg'
+                              }`}
+                          >
+                            {joiningId === event.id ? 'Sending...' : (isFull ? 'Full' : 'Join')}
+                          </button>
+                        </div>
+                      );
+                    })()
                   )}
                 </div>
               </div>
@@ -257,8 +342,12 @@ export const EventFeed: React.FC<Props> = ({ user, onNavigate }) => {
         </div>
       )}
 
-      {/* Load More Button */}
-
+      {/* Details Modal */}
+      <EventDetailsModal
+        isOpen={!!selectedEventId}
+        onClose={handleCloseDetails}
+        event={selectedEventData}
+      />
     </div>
   );
 };

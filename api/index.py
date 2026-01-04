@@ -186,8 +186,17 @@ async def get_events(
     if search:
         query = query.where(col(Event.title).ilike(f"%{search}%"))
     
+    
     query = query.offset(skip).limit(limit)
-    return session.exec(query).all()
+    events = session.exec(query).all()
+    
+    # SECURITY: Mask private fields for public list
+    # Private details are only fetched via get_event_by_id with auth check
+    for e in events:
+        e.whatsappLink = None
+        e.welcomeMessage = None
+        
+    return events
 
 @app.get("/api/events/{event_id}", response_model=Event)
 async def get_event_by_id(
