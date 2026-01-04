@@ -55,8 +55,8 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
                 rsa_key,
                 algorithms=["RS256"],
                 audience=None,
-                issuer=settings.CLERK_ISSUER,
-                options={"leeway": 30}  # Allow 30s clock skew
+                options={"verify_exp": True}, 
+                leeway=120
             )
         else:
             # Fallback for local testing (NOT SECURE in production)
