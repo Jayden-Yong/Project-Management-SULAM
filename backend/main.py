@@ -1,5 +1,7 @@
 
 import datetime
+import asyncio
+import httpx  # For keep-alive requests
 
 from contextlib import asynccontextmanager
 from typing import List, Optional
@@ -32,6 +34,33 @@ from models import (
 # Application Lifecycle & Setup
 # ==========================================
 
+async def run_keep_alive_loops():
+    """
+    Background task: Ping external services to prevent cold starts/sleeping.
+    """
+    # URL for this Render service
+    RENDER_URL = "https://volunteer-backend-u15e.onrender.com/health" 
+    # Supabase Auth Health Check
+    SUPABASE_URL = "https://uvduosutcaekynfhyluh.supabase.co/auth/v1/health"
+
+    async with httpx.AsyncClient() as client:
+        while True:
+            try:
+                # 1. Ping Render (Keep the web service active)
+                resp_render = await client.get(RENDER_URL, timeout=10.0)
+                
+                # 2. Ping Supabase (Keep the database connection pool warm)
+                resp_supabase = await client.get(SUPABASE_URL, timeout=10.0)
+                
+                print(f"💓 Keep-Alive Success: Render({resp_render.status_code}), Supabase({resp_supabase.status_code})", flush=True)
+                
+            except Exception as e:
+                # Log error but don't crash
+                print(f"⚠️ Keep-Alive Ping Failed: {e}", flush=True)
+            
+            # Wait 15 seconds before next ping
+            await asyncio.sleep(15)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -47,6 +76,9 @@ async def lifespan(app: FastAPI):
         # We don't raise here to allow the app to start and return 500s instead of crashing/timing out
         # This helps debugging on Render console
         
+    # --- Start Keep-Alive Background Task ---
+    asyncio.create_task(run_keep_alive_loops())
+
     yield
     print("🛑 Shutting down...", flush=True)
 
