@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Globe, Check } from 'lucide-react';
+import { Globe, Check, X } from 'lucide-react';
 
 declare global {
     interface Window {
@@ -20,19 +20,27 @@ export const GoogleTranslate = () => {
     const [currentLang, setCurrentLang] = useState('en');
 
     useEffect(() => {
-        // 1. Define the callback expected by the Google script
-        window.googleTranslateElementInit = () => {
-            if (window.google && window.google.translate) {
-                new window.google.translate.TranslateElement(
-                    {
-                        pageLanguage: 'en',
-                        autoDisplay: false,
-                        layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE
-                    },
-                    'google_translate_element'
-                );
+        // 1. Initial setup check
+        const initGoogleTranslate = () => {
+            if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+                if (!document.getElementById('google_translate_element')) return;
+
+                try {
+                    new window.google.translate.TranslateElement(
+                        {
+                            pageLanguage: 'en',
+                            autoDisplay: false,
+                            layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE
+                        },
+                        'google_translate_element'
+                    );
+                } catch (e) {
+                    console.error("Google Translate init error:", e);
+                }
             }
-        };
+        }
+
+        window.googleTranslateElementInit = initGoogleTranslate;
 
         // 2. Check if script is already present
         const existingScript = document.getElementById('google-translate-script');
@@ -43,9 +51,8 @@ export const GoogleTranslate = () => {
             script.async = true;
             document.body.appendChild(script);
         } else {
-            if (window.google && window.google.translate) {
-                window.googleTranslateElementInit();
-            }
+            // If script is already loaded, manually trigger init
+            initGoogleTranslate();
         }
 
         // 3. Try to sync initial language from cookie if exists
@@ -57,22 +64,13 @@ export const GoogleTranslate = () => {
 
     const changeLanguage = (langCode: string) => {
         // 1. Set the cookie explicitly (Google Translate source of truth)
-        // We set it for both /en/target and /auto/target to be safe
         document.cookie = `googtrans=/en/${langCode}; path=/; domain=${window.location.hostname}`;
         document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${window.location.hostname}`;
-
-        // 2. Also try to update the DOM if possible (for visual feedback before reload)
-        const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-        if (combo) {
-            combo.value = langCode;
-            combo.dispatchEvent(new Event('change', { bubbles: true }));
-        }
 
         setCurrentLang(langCode);
         setIsOpen(false);
 
-        // 3. Force reload to apply changes reliably on mobile
-        // This is the most robust way to ensure the script picks up the new language
+        // 2. Force reload to apply changes reliably
         setTimeout(() => {
             window.location.reload();
         }, 100);
@@ -80,6 +78,17 @@ export const GoogleTranslate = () => {
 
     return (
         <div className="fixed bottom-5 right-5 z-[1000] flex flex-col items-end gap-2">
+
+            {/* 
+                HIDDEN GOOGLE TRANSLATE ELEMENT
+                Must be created outside the button and consistently present in DOM.
+                We hide it visually but keep it compatible with Google's script.
+             */}
+            <div
+                id="google_translate_element"
+                className="absolute opacity-0 pointer-events-none w-px h-px overflow-hidden"
+                style={{ top: 0, left: 0 }}
+            />
 
             {/* Custom Language Dropdown */}
             {isOpen && (
@@ -111,9 +120,8 @@ export const GoogleTranslate = () => {
                     : 'bg-white border-slate-200 text-slate-600 hover:text-primary-600 hover:border-primary-200'
                     }`}
             >
-                <div id="google_translate_element" className="absolute opacity-0 pointer-events-none" />
                 {isOpen ? (
-                    <XIcon className="w-6 h-6" />
+                    <X className="w-6 h-6" />
                 ) : (
                     <Globe className="w-6 h-6" />
                 )}
@@ -121,22 +129,3 @@ export const GoogleTranslate = () => {
         </div>
     );
 };
-
-// Simple X Icon component for internal use if needed, or import from lucide-react
-const XIcon = ({ className }: { className: string }) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-    >
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-    </svg>
-);
