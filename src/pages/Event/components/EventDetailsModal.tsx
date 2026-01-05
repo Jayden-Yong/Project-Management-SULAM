@@ -26,7 +26,7 @@ export const EventDetailsModal: React.FC<Props> = ({ isOpen, onClose, event }) =
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
+        <div className="fixed inset-0 z-[2000] flex items-end sm:items-center justify-center sm:p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}></div>
             <div className="bg-white w-full h-[85vh] sm:h-auto sm:max-h-[85vh] sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col relative z-10 animate-slide-up sm:animate-fade-in-up">
 
