@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Globe } from 'lucide-react';
 
 declare global {
     interface Window {
@@ -39,9 +40,14 @@ export const GoogleTranslate = () => {
     }, []);
 
     return (
-        <div
-            id="google_translate_element"
-            className="fixed bottom-5 right-5 z-[200] drop-shadow-xl" // Increased z-index to be safe
-        />
+        <div className="fixed bottom-5 right-5 z-50 flex items-center justify-center">
+            {/* Custom Visual Button (Earth Icon) */}
+            <div className="w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center border border-slate-200 cursor-pointer hover:bg-slate-50 hover:text-teal-600 transition-all hover:scale-105 active:scale-95 group">
+                <Globe className="w-6 h-6 text-slate-600 group-hover:text-teal-600 transition-colors" />
+            </div>
+
+            {/* Invisible Google Translate Overlay that intercepts clicks */}
+            <div id="google_translate_element" />
+        </div>
     );
 };

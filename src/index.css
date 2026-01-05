@@ -55,32 +55,24 @@
 }
 
 /* ========================================= */
+/* ========================================= */
 /* GOOGLE TRANSLATE OVERRIDES                */
 /* ========================================= */
 
-/* Hide Top Banner and iframe spacing */
+/* 1. Hide Top Banner / Frame */
+.goog-te-banner-frame {
+  display: none !important;
+}
+
 body {
-  top: 0 !important;
+  top: 0px !important;
   position: static !important;
 }
 
-.goog-te-banner-frame {
-  display: none !important;
-  visibility: hidden !important;
-  height: 0 !important;
-}
-
-/* body>.skiptranslate {
-  display: none !important;
-} */
-
-/* Hide Tooltips / Popups (The "Is this translation good?" popup) */
+/* 2. Hide "Original Text" Popup on Hover */
 .goog-tooltip,
-.goog-tooltip:hover,
-.goog-te-balloon-frame {
+.goog-tooltip:hover {
   display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
 }
 
 .goog-text-highlight {
@@ -89,61 +81,46 @@ body {
   box-shadow: none !important;
 }
 
-/* Customize Widget Appearance */
+/* 3. Make the Widget Invisible & Clickable Overlay */
 #google_translate_element {
-  display: inline-block;
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  z-index: 10;
   overflow: hidden;
 }
 
+/* Ensure the select inside covers the whole area */
 .goog-te-gadget {
-  font-family: 'Inter', sans-serif !important;
-  font-size: 0 !important;
-  /* Hides "Powered by Google" text */
-  color: transparent !important;
-  margin-top: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
 }
 
-/* Ensure dropdown text is visible despite parent font-size: 0 */
+.goog-te-combo {
+  width: 100% !important;
+  height: 100% !important;
+  cursor: pointer !important;
+  display: block !important;
+}
+
+/* Hide extra things inside the gadget */
+.goog-te-gadget span,
+.goog-te-gadget div,
+.goog-te-gadget a {
+  display: none !important;
+}
+
+/* Except the combo */
 .goog-te-gadget .goog-te-combo {
-  margin: 0 !important;
-  padding: 6px 12px;
-  border-radius: 9999px;
-  /* Rounded full */
-  border: 1px solid #e5e7eb;
-  /* Gray-200 */
-  background-color: white;
-  font-family: 'Inter', sans-serif;
-  font-size: 13px !important;
-  /* Reset font size */
-  color: #374151;
-  /* Gray-700 */
-  font-weight: 500;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.2s;
-  height: 32px;
-  line-height: 1.2;
+  display: block !important;
 }
 
-.goog-te-gadget .goog-te-combo:hover {
-  background-color: #f9fafb;
-  /* Gray-50 */
-  border-color: #d1d5db;
-  /* Gray-300 */
-}
+/* ========================================= */
 
-/* Hide Google Logo and Icons */
-.goog-te-gadget-icon {
-  display: none !important;
-}
 
-.goog-te-gadget>span>a {
-  display: none !important;
-}
-
-.goog-te-gadget .goog-logo-link {
-  display: none !important;
-}
 
 /* Mobile responsive fix */
 iframe.goog-te-menu-frame {
