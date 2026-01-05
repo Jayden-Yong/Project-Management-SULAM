@@ -91,14 +91,16 @@ body {
 /* 3. Hide the entire Google Translate Widget Container */
 /* We still need it in DOM for the script to attach, but we don't want to see it */
 #google_translate_element {
-  display: none !important;
-  /* The script will still work even if display: none */
+  /* display: none !important;  <-- This can prevent script from initializing in some browsers */
   visibility: hidden !important;
-  width: 0 !important;
-  height: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
   overflow: hidden !important;
   position: absolute !important;
   z-index: -1000 !important;
+  top: 0;
+  left: 0;
+  pointer-events: none !important;
 }
 
 /* 4. Just in case, hide children of the gadget */

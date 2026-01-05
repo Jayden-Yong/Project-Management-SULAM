@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, LayoutDashboard, Calendar, type LucideIcon, User, List, CheckCircle, Search } from 'lucide-react';
+import { X, LayoutDashboard, Calendar, type LucideIcon, User, List, CheckCircle, Search, Award, ClipboardCheck } from 'lucide-react';
 import { UserRole } from '../types';
 
 interface UserGuideModalProps {
@@ -13,7 +13,7 @@ interface GuideStep {
     title: string;
     description: string;
     icon: LucideIcon;
-    color: string;
+    theme: string; // e.g. "blue", "teal", "green"
 }
 
 const VOLUNTEER_STEPS: GuideStep[] = [
@@ -21,25 +21,25 @@ const VOLUNTEER_STEPS: GuideStep[] = [
         title: "Campus Feed",
         description: "Browse upcoming events tailored for you. Filter by category, location, or search for specific opportunities to contribute.",
         icon: Search,
-        color: "bg-blue-100 text-blue-600"
+        theme: "blue"
     },
     {
         title: "My Impact Dashboard",
         description: "Track your journey! View your scheduled events, check application status (Pending/Confirmed), and see your past contributions.",
         icon: LayoutDashboard,
-        color: "bg-teal-100 text-teal-600"
+        theme: "teal"
     },
     {
         title: "Completing Events",
         description: "Once an event is done, it will appear in your history. You may receive impact points for your verified participation.",
-        icon: CheckCircle,
-        color: "bg-green-100 text-green-600"
+        icon: Award,
+        theme: "green"
     },
     {
         title: "Profile & Settings",
         description: "Keep your profile up to date to help organizers trust you. You can edit your bio and contact info easily.",
         icon: User,
-        color: "bg-purple-100 text-purple-600"
+        theme: "purple"
     }
 ];
 
@@ -48,31 +48,43 @@ const ORGANIZER_STEPS: GuideStep[] = [
         title: "Organizer Dashboard",
         description: "Your command center. Manage ongoing events, review volunteer applications, and track overall participation stats.",
         icon: LayoutDashboard,
-        color: "bg-blue-100 text-blue-600"
+        theme: "blue"
     },
     {
         title: "Creating Events",
         description: "Post new volunteering opportunities. Provide clear details, location, and schedules to attract the right volunteers.",
         icon: Calendar,
-        color: "bg-teal-100 text-teal-600"
+        theme: "teal"
     },
     {
         title: "Managing Volunteers",
         description: "Review incoming applications. Approve or reject volunteers based on their profile and your event capacity.",
         icon: List,
-        color: "bg-orange-100 text-orange-600"
+        theme: "orange"
     },
     {
         title: "Verification",
         description: "After an event, mark it as completed to award impact points to your dedicated volunteers.",
-        icon: CheckCircle,
-        color: "bg-green-100 text-green-600"
+        icon: ClipboardCheck,
+        theme: "green"
     }
 ];
 
 export const UserGuideModal: React.FC<UserGuideModalProps> = ({ isOpen, onClose, role }) => {
     const steps = role === UserRole.ORGANIZER ? ORGANIZER_STEPS : VOLUNTEER_STEPS;
     const [activeStep, setActiveStep] = useState(0);
+
+    // Helper to get color classes based on theme
+    const getColors = (theme: string, isActive: boolean) => {
+        const colors: Record<string, { iconBg: string, iconText: string, activeBorder: string }> = {
+            blue: { iconBg: 'bg-blue-100', iconText: 'text-blue-600', activeBorder: 'ring-blue-200' },
+            teal: { iconBg: 'bg-teal-100', iconText: 'text-teal-600', activeBorder: 'ring-teal-200' },
+            green: { iconBg: 'bg-green-100', iconText: 'text-green-600', activeBorder: 'ring-green-200' },
+            purple: { iconBg: 'bg-purple-100', iconText: 'text-purple-600', activeBorder: 'ring-purple-200' },
+            orange: { iconBg: 'bg-orange-100', iconText: 'text-orange-600', activeBorder: 'ring-orange-200' },
+        };
+        return colors[theme] || colors.blue;
+    };
 
     return (
         <Dialog.Root open={isOpen} onOpenChange={onClose}>
@@ -100,50 +112,64 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({ isOpen, onClose,
                     <div className="flex flex-col md:flex-row h-[400px]">
                         {/* Sidebar / Navigation */}
                         <div className="w-full md:w-1/3 bg-slate-50/50 border-r border-slate-100 p-4 space-y-2 overflow-y-auto">
-                            {steps.map((step, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => setActiveStep(index)}
-                                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${activeStep === index
-                                            ? 'bg-white shadow-sm ring-1 ring-slate-200'
-                                            : 'hover:bg-slate-100 text-slate-500'
-                                        }`}
-                                >
-                                    <div className={`p-2 rounded-lg ${step.color} bg-opacity-20`}>
-                                        <step.icon className="w-4 h-4" />
-                                    </div>
-                                    <span className={`text-sm font-semibold ${activeStep === index ? 'text-slate-900' : 'text-slate-600'}`}>
-                                        {step.title}
-                                    </span>
-                                </button>
-                            ))}
+                            {steps.map((step, index) => {
+                                const colors = getColors(step.theme, activeStep === index);
+                                return (
+                                    <button
+                                        key={index}
+                                        onClick={() => setActiveStep(index)}
+                                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${activeStep === index
+                                                ? `bg-white shadow-sm ring-1 ${colors.activeBorder}`
+                                                : 'hover:bg-slate-100 text-slate-500'
+                                            }`}
+                                    >
+                                        <div className={`p-2 rounded-lg ${colors.iconBg} ${colors.iconText}`}>
+                                            <step.icon className="w-4 h-4" />
+                                        </div>
+                                        <span className={`text-sm font-semibold ${activeStep === index ? 'text-slate-900' : 'text-slate-600'}`}>
+                                            {step.title}
+                                        </span>
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         {/* Detail View */}
                         <div className="flex-1 p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
                             {/* Decorative Background Blob */}
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-gradian-to-br from-teal-50 to-blue-50 rounded-full blur-3xl -z-10 opacity-50" />
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-teal-50 to-blue-50 rounded-full blur-3xl -z-10 opacity-50" />
 
-                            <div className={`p-4 rounded-2xl mb-6 ${steps[activeStep].color.replace('text-', 'bg-').replace('100', '50')} ${steps[activeStep].color} bg-opacity-10`}>
-                                {React.createElement(steps[activeStep].icon, { className: "w-12 h-12" })}
-                            </div>
+                            {(() => {
+                                const step = steps[activeStep];
+                                const colors = getColors(step.theme, true);
+                                return (
+                                    <>
+                                        <div className={`p-4 rounded-2xl mb-6 ${colors.iconBg} ${colors.iconText} bg-opacity-20`}>
+                                            <step.icon className="w-12 h-12" />
+                                        </div>
 
-                            <h3 className="text-xl font-bold text-slate-900 mb-4">
-                                {steps[activeStep].title}
-                            </h3>
+                                        <h3 className="text-xl font-bold text-slate-900 mb-4">
+                                            {step.title}
+                                        </h3>
 
-                            <p className="text-slate-600 leading-relaxed max-w-sm">
-                                {steps[activeStep].description}
-                            </p>
+                                        <p className="text-slate-600 leading-relaxed max-w-sm">
+                                            {step.description}
+                                        </p>
 
-                            <div className="mt-8 flex gap-2">
-                                {steps.map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className={`h-1.5 rounded-full transition-all duration-300 ${activeStep === i ? 'w-6 bg-teal-500' : 'w-1.5 bg-slate-200'}`}
-                                    />
-                                ))}
-                            </div>
+                                        <div className="mt-8 flex gap-2">
+                                            {steps.map((s, i) => {
+                                                const c = getColors(s.theme, false);
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        className={`h-1.5 rounded-full transition-all duration-300 ${activeStep === i ? `w-6 ${c.iconText.replace('text-', 'bg-')}` : 'w-1.5 bg-slate-200'}`}
+                                                    />
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                );
+                            })()}
                         </div>
                     </div>
 

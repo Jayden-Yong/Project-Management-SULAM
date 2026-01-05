@@ -12,6 +12,7 @@ const LANGUAGES = [
     { code: 'en', label: 'English', flag: '🇺🇸' },
     { code: 'ms', label: 'Bahasa Melayu', flag: '🇲🇾' },
     { code: 'zh-CN', label: '中文 (Simplified)', flag: '🇨🇳' },
+    { code: 'ta', label: 'Tamil', flag: '🇮🇳' },
 ];
 
 export const GoogleTranslate = () => {
@@ -25,7 +26,7 @@ export const GoogleTranslate = () => {
                 new window.google.translate.TranslateElement(
                     {
                         pageLanguage: 'en',
-                        autoDisplay: false, // Don't show the banner
+                        autoDisplay: false,
                         layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE
                     },
                     'google_translate_element'
@@ -42,7 +43,6 @@ export const GoogleTranslate = () => {
             script.async = true;
             document.body.appendChild(script);
         } else {
-            // If script exists, manually trigger init if needed
             if (window.google && window.google.translate) {
                 window.googleTranslateElementInit();
             }
@@ -57,13 +57,26 @@ export const GoogleTranslate = () => {
 
     const changeLanguage = (langCode: string) => {
         const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+
         if (combo) {
             combo.value = langCode;
             combo.dispatchEvent(new Event('change'));
             setCurrentLang(langCode);
             setIsOpen(false);
         } else {
-            console.warn('Google Translate widget not ready yet.');
+            console.warn('Google Translate widget not ready yet. Retrying...');
+            // Simple retry mechanism
+            setTimeout(() => {
+                const retryCombo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+                if (retryCombo) {
+                    retryCombo.value = langCode;
+                    retryCombo.dispatchEvent(new Event('change'));
+                    setCurrentLang(langCode);
+                    setIsOpen(false);
+                } else {
+                    console.error('Failed to find Google Translate dropdown after retry.');
+                }
+            }, 500);
         }
     };
 
@@ -78,8 +91,8 @@ export const GoogleTranslate = () => {
                             key={lang.code}
                             onClick={() => changeLanguage(lang.code)}
                             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${currentLang === lang.code
-                                    ? 'bg-primary-50 text-primary-700'
-                                    : 'text-slate-600 hover:bg-slate-50'
+                                ? 'bg-primary-50 text-primary-700'
+                                : 'text-slate-600 hover:bg-slate-50'
                                 }`}
                         >
                             <span className="flex items-center gap-2">
@@ -96,8 +109,8 @@ export const GoogleTranslate = () => {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center border transition-all duration-300 hover:scale-105 active:scale-95 ${isOpen
-                        ? 'bg-primary-600 border-primary-600 text-white rotate-12'
-                        : 'bg-white border-slate-200 text-slate-600 hover:text-primary-600 hover:border-primary-200'
+                    ? 'bg-primary-600 border-primary-600 text-white rotate-12'
+                    : 'bg-white border-slate-200 text-slate-600 hover:text-primary-600 hover:border-primary-200'
                     }`}
             >
                 <Globe className="w-6 h-6" />
