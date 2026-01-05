@@ -123,7 +123,7 @@ export const GoogleTranslate = () => {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center border transition-all duration-300 hover:scale-105 active:scale-95 ${isOpen
-                    ? 'bg-primary-600 border-primary-600 text-white rotate-12'
+                    ? 'bg-slate-900 border-slate-900 text-white rotate-12'
                     : 'bg-white border-slate-200 text-slate-600 hover:text-primary-600 hover:border-primary-200'
                     }`}
             >
