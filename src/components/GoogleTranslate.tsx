@@ -56,21 +56,28 @@ export const GoogleTranslate = () => {
         }
 
         // 3. Try to sync initial language from cookie if exists
-        const match = document.cookie.match(/googtrans=\/en\/([a-zA-Z-]+)/);
+        // Regex now matches /en/CODE or /auto/CODE
+        const match = document.cookie.match(/googtrans=\/(?:en|auto)\/([a-zA-Z0-9-]+)/);
         if (match && match[1]) {
             setCurrentLang(match[1]);
         }
     }, []);
 
     const changeLanguage = (langCode: string) => {
-        // 1. Set the cookie explicitly (Google Translate source of truth)
-        document.cookie = `googtrans=/en/${langCode}; path=/; domain=${window.location.hostname}`;
-        document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${window.location.hostname}`;
+        // 1. Clear existing cookies to avoid conflicts
+        const domain = window.location.hostname;
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain}`;
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+
+        // 2. Set the cookie explicitly (Google Translate source of truth)
+        // We set both /auto/ and /en/ to cover different Google Translate versions/behaviors
+        document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${domain}`;
+        document.cookie = `googtrans=/auto/${langCode}; path=/;`;
 
         setCurrentLang(langCode);
         setIsOpen(false);
 
-        // 2. Force reload to apply changes reliably
+        // 3. Force reload to apply changes reliably
         setTimeout(() => {
             window.location.reload();
         }, 100);
