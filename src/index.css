@@ -70,9 +70,9 @@ body {
   height: 0 !important;
 }
 
-body>.skiptranslate {
+/* body>.skiptranslate {
   display: none !important;
-}
+} */
 
 /* Hide Tooltips / Popups (The "Is this translation good?" popup) */
 .goog-tooltip,

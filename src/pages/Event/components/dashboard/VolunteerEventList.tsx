@@ -134,8 +134,17 @@ export const VolunteerEventList: React.FC<Props> = ({
                                 )}
                             </div>
                         ) : (
-                            <div className="ml-auto">
+                            <div className="ml-auto flex items-center gap-2">
                                 {getStatusPill(reg.status)}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onViewEvent(reg.eventId);
+                                    }}
+                                    className="ml-3 px-3 py-1.5 text-xs font-medium text-teal-700 bg-teal-50 rounded-lg border border-teal-100 hover:bg-teal-100 transition-colors"
+                                >
+                                    View Details
+                                </button>
                             </div>
                         )}
                     </div>
