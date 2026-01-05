@@ -105,13 +105,24 @@ body {
 
 /* 4. Just in case, hide children of the gadget */
 .goog-te-gadget {
-  display: none !important;
+  /* display: none !important; */
+  visibility: hidden !important;
   height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
 }
 
 /* 5. Hide the skiptranslate banner if it pops up */
 .skiptranslate {
-  display: none !important;
+  /* display: none !important; */
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
 }
 
 /* EXCEPT the body wrapper - sometimes skiptranslate is applied to body */

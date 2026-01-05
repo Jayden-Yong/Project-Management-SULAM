@@ -56,28 +56,30 @@ export const GoogleTranslate = () => {
     }, []);
 
     const changeLanguage = (langCode: string) => {
-        const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+        let attempts = 0;
+        const maxAttempts = 20; // Try for 2 seconds (20 * 100ms)
 
-        if (combo) {
-            combo.value = langCode;
-            combo.dispatchEvent(new Event('change'));
-            setCurrentLang(langCode);
-            setIsOpen(false);
-        } else {
-            console.warn('Google Translate widget not ready yet. Retrying...');
-            // Simple retry mechanism
-            setTimeout(() => {
-                const retryCombo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-                if (retryCombo) {
-                    retryCombo.value = langCode;
-                    retryCombo.dispatchEvent(new Event('change'));
-                    setCurrentLang(langCode);
-                    setIsOpen(false);
-                } else {
-                    console.error('Failed to find Google Translate dropdown after retry.');
-                }
-            }, 500);
-        }
+        const tryChange = () => {
+            const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+
+            if (combo) {
+                combo.value = langCode;
+                combo.dispatchEvent(new Event('change'));
+                combo.dispatchEvent(new Event('click')); // Sometimes needed
+                setCurrentLang(langCode);
+                setIsOpen(false);
+                return;
+            }
+
+            attempts++;
+            if (attempts < maxAttempts) {
+                setTimeout(tryChange, 100);
+            } else {
+                console.error('Google Translate: Dropdown not found after 2 seconds.');
+            }
+        };
+
+        tryChange();
     };
 
     return (

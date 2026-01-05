@@ -4,6 +4,16 @@
 
 -----
 
+## 📚 Documentation & Guides
+
+> **[📖 User Guide (Volunteers & Organizers)](USER_GUIDE.md)**  
+> A complete manual explaining how to use all features of the platform.
+
+> **[💻 Local Setup Guide](Local%20Host.txt)**  
+> Step-by-step instructions on how to run this project on your local machine.
+
+-----
+
 ## 🏗️ System Architecture
 
 The application follows a clean **Client-Server Architecture** optimized for serverless deployment (Vercel):
