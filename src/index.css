@@ -90,54 +90,59 @@ body {
 
 /* 3. Hide the entire Google Translate Widget Container */
 /* We still need it in DOM for the script to attach, but we don't want to see it */
+/* 3. Hide the entire Google Translate Widget Container */
+/* We still need it in DOM for the script to attach, but we don't want to see it */
 #google_translate_element {
-  /* display: none !important;  <-- This can prevent script from initializing in some browsers */
-  visibility: hidden !important;
+  /* display: none !important; */
+  /* visibility: hidden !important; */
+  display: block !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
   width: 1px !important;
   height: 1px !important;
   overflow: hidden !important;
-  position: absolute !important;
   z-index: -1000 !important;
-  top: 0;
-  left: 0;
+  opacity: 0 !important;
   pointer-events: none !important;
 }
 
 /* 4. Just in case, hide children of the gadget */
 .goog-te-gadget {
-  /* display: none !important; */
-  visibility: hidden !important;
-  height: 0 !important;
-  width: 0 !important;
-  overflow: hidden !important;
-  position: absolute !important;
-  pointer-events: none !important;
+  display: block !important;
+  /* visibility: hidden !important; */
+  position: relative !important;
+  /* Ensure it has some dimensions so inner elements render */
+  width: auto !important;
+  height: auto !important;
 }
 
 /* 5. Hide the skiptranslate banner if it pops up */
 .skiptranslate {
-  /* display: none !important; */
-  visibility: hidden !important;
-  height: 0 !important;
-  width: 0 !important;
-  overflow: hidden !important;
+  display: block !important;
   position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
   pointer-events: none !important;
 }
 
 /* EXCEPT the body wrapper - sometimes skiptranslate is applied to body */
 body.skiptranslate {
   display: block !important;
+  position: static !important;
+  top: 0 !important;
+  left: 0 !important;
 }
 
 /* ========================================= */
-
-
-
 /* Mobile responsive fix */
 iframe.goog-te-menu-frame {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
-  border-radius: 12px !important;
+  display: none !important;
+  box-shadow: none !important;
 }
 
 @keyframes fade-in-up {
@@ -151,6 +156,7 @@ iframe.goog-te-menu-frame {
     transform: translateY(0);
   }
 }
+
 
 @keyframes slide-up {
   0% {
