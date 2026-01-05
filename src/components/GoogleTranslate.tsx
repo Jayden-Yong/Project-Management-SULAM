@@ -56,33 +56,26 @@ export const GoogleTranslate = () => {
     }, []);
 
     const changeLanguage = (langCode: string) => {
-        let attempts = 0;
-        const maxAttempts = 20; // Try for 2 seconds
+        // 1. Set the cookie explicitly (Google Translate source of truth)
+        // We set it for both /en/target and /auto/target to be safe
+        document.cookie = `googtrans=/en/${langCode}; path=/; domain=${window.location.hostname}`;
+        document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${window.location.hostname}`;
 
-        const tryChange = () => {
-            const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+        // 2. Also try to update the DOM if possible (for visual feedback before reload)
+        const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+        if (combo) {
+            combo.value = langCode;
+            combo.dispatchEvent(new Event('change', { bubbles: true }));
+        }
 
-            if (combo) {
-                combo.value = langCode;
-                // Dispatch multiple event types with bubbling to ensure capture
-                combo.dispatchEvent(new Event('change', { bubbles: true }));
-                combo.dispatchEvent(new Event('input', { bubbles: true }));
-                combo.dispatchEvent(new Event('click', { bubbles: true }));
+        setCurrentLang(langCode);
+        setIsOpen(false);
 
-                setCurrentLang(langCode);
-                setIsOpen(false);
-                return;
-            }
-
-            attempts++;
-            if (attempts < maxAttempts) {
-                setTimeout(tryChange, 100);
-            } else {
-                console.error('Google Translate: Dropdown not found after 2 seconds.');
-            }
-        };
-
-        tryChange();
+        // 3. Force reload to apply changes reliably on mobile
+        // This is the most robust way to ensure the script picks up the new language
+        setTimeout(() => {
+            window.location.reload();
+        }, 100);
     };
 
     return (
