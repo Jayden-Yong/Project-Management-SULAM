@@ -56,12 +56,15 @@
 
 /* ========================================= */
 /* ========================================= */
-/* GOOGLE TRANSLATE OVERRIDES                */
+/* GOOGLE TRANSLATE SUPER OVERRIDES          */
 /* ========================================= */
 
 /* 1. Hide Top Banner / Frame */
 .goog-te-banner-frame {
   display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
 }
 
 body {
@@ -69,10 +72,14 @@ body {
   position: static !important;
 }
 
-/* 2. Hide "Original Text" Popup on Hover */
+/* 2. Hide "Original Text" Tooltips/Popups aggressively */
 .goog-tooltip,
-.goog-tooltip:hover {
+.goog-tooltip:hover,
+.goog-te-balloon-frame {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .goog-text-highlight {
@@ -81,40 +88,32 @@ body {
   box-shadow: none !important;
 }
 
-/* 3. Make the Widget Invisible & Clickable Overlay */
+/* 3. Hide the entire Google Translate Widget Container */
+/* We still need it in DOM for the script to attach, but we don't want to see it */
 #google_translate_element {
+  display: none !important;
+  /* The script will still work even if display: none */
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
   position: absolute !important;
-  top: 0;
-  left: 0;
-  width: 100% !important;
-  height: 100% !important;
-  opacity: 0 !important;
-  z-index: 10;
-  overflow: hidden;
+  z-index: -1000 !important;
 }
 
-/* Ensure the select inside covers the whole area */
+/* 4. Just in case, hide children of the gadget */
 .goog-te-gadget {
-  height: 100% !important;
-  width: 100% !important;
+  display: none !important;
+  height: 0 !important;
 }
 
-.goog-te-combo {
-  width: 100% !important;
-  height: 100% !important;
-  cursor: pointer !important;
-  display: block !important;
-}
-
-/* Hide extra things inside the gadget */
-.goog-te-gadget span,
-.goog-te-gadget div,
-.goog-te-gadget a {
+/* 5. Hide the skiptranslate banner if it pops up */
+.skiptranslate {
   display: none !important;
 }
 
-/* Except the combo */
-.goog-te-gadget .goog-te-combo {
+/* EXCEPT the body wrapper - sometimes skiptranslate is applied to body */
+body.skiptranslate {
   display: block !important;
 }
 

@@ -1,9 +1,10 @@
 import { useClerk, useUser } from '@clerk/clerk-react';
-import { LogOut, Menu, X, Settings, User as UserIcon } from 'lucide-react';
+import { LogOut, Menu, X, Settings, User as UserIcon, HelpCircle } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { UserRole } from '../types';
 import { ProfileEditModal } from '../pages/Event/components/ProfileEditModal';
+import { UserGuideModal } from './UserGuideModal';
 
 /**
  * Global Navigation Bar.
@@ -16,6 +17,7 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showUserGuide, setShowUserGuide] = useState(false);
 
   // Default to Volunteer if no role is found
   const role = (user?.unsafeMetadata?.role as UserRole) || UserRole.VOLUNTEER;
@@ -68,7 +70,18 @@ export const Navbar: React.FC = () => {
             <div className="hidden md:flex items-center gap-4">
               {isSignedIn && user ? (
                 <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-                  <div className="flex flex-col items-end">
+
+                  {/* User Guide Button */}
+                  <button
+                    onClick={() => setShowUserGuide(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
+                    title="User Guide"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                    <span>Guide</span>
+                  </button>
+
+                  <div className="flex flex-col items-end mx-2">
                     <span className="text-sm font-semibold text-gray-900">{user.fullName}</span>
                     <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">{role}</span>
                   </div>
@@ -125,6 +138,15 @@ export const Navbar: React.FC = () => {
                     <Settings className="w-4 h-4" />
                   </button>
                 </div>
+
+                <button
+                  onClick={() => { setShowUserGuide(true); setIsMenuOpen(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-slate-600 hover:bg-slate-50 transition-all text-left"
+                >
+                  <HelpCircle className="w-5 h-5" />
+                  User Guide
+                </button>
+
                 <Link to="/feed" onClick={() => setIsMenuOpen(false)} className={getLinkClass('/feed', true)}>Campus Feed</Link>
                 <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className={getLinkClass('/dashboard', true)}>
                   {role === UserRole.ORGANIZER ? 'Dashboard' : 'My Impact'}
@@ -146,6 +168,12 @@ export const Navbar: React.FC = () => {
       <ProfileEditModal
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
+      />
+
+      <UserGuideModal
+        isOpen={showUserGuide}
+        onClose={() => setShowUserGuide(false)}
+        role={role}
       />
     </>
   );
