@@ -90,10 +90,10 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({ isOpen, onClose,
         <Dialog.Root open={isOpen} onOpenChange={onClose}>
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity animate-fade-in" />
-                <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl p-0 w-[90vw] max-w-2xl z-50 focus:outline-none overflow-hidden border border-slate-100 animate-scale-up">
+                <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl p-0 w-[90vw] max-w-2xl z-50 focus:outline-none overflow-hidden max-h-[90vh] overflow-y-auto border border-slate-100 animate-scale-up">
 
-                    {/* Header */}
-                    <div className="bg-slate-50 border-b border-slate-100 p-6 flex items-center justify-between">
+                    {/* Header - Sticky */}
+                    <div className="bg-slate-50 border-b border-slate-100 p-6 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md bg-opacity-90">
                         <div>
                             <h2 className="text-2xl font-bold text-slate-900">
                                 {role === UserRole.ORGANIZER ? "Organizer Guide" : "Volunteer Guide"}
@@ -108,10 +108,11 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({ isOpen, onClose,
                         </button>
                     </div>
 
-                    {/* Content */}
-                    <div className="flex flex-col md:flex-row h-[400px]">
+                    {/* Content - Responsive Height */}
+                    <div className="flex flex-col md:flex-row md:h-[400px] h-auto">
+
                         {/* Sidebar / Navigation */}
-                        <div className="w-full md:w-1/3 bg-slate-50/50 border-r border-slate-100 p-4 space-y-2 overflow-y-auto">
+                        <div className="w-full md:w-1/3 bg-slate-50/50 border-b md:border-b-0 md:border-r border-slate-100 p-4 space-y-2 md:overflow-y-auto">
                             {steps.map((step, index) => {
                                 const colors = getColors(step.theme, activeStep === index);
                                 return (
@@ -135,7 +136,7 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({ isOpen, onClose,
                         </div>
 
                         {/* Detail View */}
-                        <div className="flex-1 p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                        <div className="flex-1 p-8 flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[300px]">
                             {/* Decorative Background Blob */}
                             <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-teal-50 to-blue-50 rounded-full blur-3xl -z-10 opacity-50" />
 
@@ -173,7 +174,7 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({ isOpen, onClose,
                         </div>
                     </div>
 
-                    {/* Footer */}
+                    {/* Footer - Sticky Bottom optional but let's keep it normal for now, it will push down */}
                     <div className="p-4 border-t border-slate-100 flex justify-end bg-slate-50">
                         {activeStep < steps.length - 1 ? (
                             <button

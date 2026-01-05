@@ -57,15 +57,18 @@ export const GoogleTranslate = () => {
 
     const changeLanguage = (langCode: string) => {
         let attempts = 0;
-        const maxAttempts = 20; // Try for 2 seconds (20 * 100ms)
+        const maxAttempts = 20; // Try for 2 seconds
 
         const tryChange = () => {
             const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
 
             if (combo) {
                 combo.value = langCode;
-                combo.dispatchEvent(new Event('change'));
-                combo.dispatchEvent(new Event('click')); // Sometimes needed
+                // Dispatch multiple event types with bubbling to ensure capture
+                combo.dispatchEvent(new Event('change', { bubbles: true }));
+                combo.dispatchEvent(new Event('input', { bubbles: true }));
+                combo.dispatchEvent(new Event('click', { bubbles: true }));
+
                 setCurrentLang(langCode);
                 setIsOpen(false);
                 return;
@@ -115,11 +118,32 @@ export const GoogleTranslate = () => {
                     : 'bg-white border-slate-200 text-slate-600 hover:text-primary-600 hover:border-primary-200'
                     }`}
             >
-                <Globe className="w-6 h-6" />
+                <div id="google_translate_element" className="absolute opacity-0 pointer-events-none" />
+                {isOpen ? (
+                    <XIcon className="w-6 h-6" />
+                ) : (
+                    <Globe className="w-6 h-6" />
+                )}
             </button>
-
-            {/* Hidden Target for Google Script */}
-            <div id="google_translate_element" style={{ display: 'none' }} />
         </div>
     );
 };
+
+// Simple X Icon component for internal use if needed, or import from lucide-react
+const XIcon = ({ className }: { className: string }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+    >
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+);
